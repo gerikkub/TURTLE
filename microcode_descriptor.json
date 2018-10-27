@@ -1,0 +1,203 @@
+{
+    "metadata": {
+        "load": {
+            "opcode_position": "0",
+            "opcode": "load"
+        },
+
+        "misc_mem": {
+            "opcode_position": "3",
+            "opcode": "misc_mem"
+        },
+
+        "op_imm": {
+            "opcode_position": "4",
+            "opcode": "op_imm"
+        },
+
+        "auipc": {
+            "opcode_position": "5",
+            "opcode": "auipc"
+        },
+
+        "store": {
+            "opcode_position": "8",
+            "opcode": "store"
+        },
+
+        "op": {
+            "opcode_position": "C",
+            "opcode": "op"
+        },
+
+        "lui": {
+            "opcode_position": "D",
+            "opcode": "lui"
+        },
+
+        "branch": {
+            "opcode_position": "18",
+            "opcode": "branch"
+        },
+
+        "jalr": {
+            "opcode_position": "19",
+            "opcode": "jalr"
+        },
+
+        "jal": {
+            "opcode_position": "1B",
+            "opcode": "jal"
+        },
+
+        "system": {
+            "opcode_position": "1C",
+            "opcode": "system"
+        }
+    },
+
+    "opcode": {
+        "inst_fetch": {
+            "subops": ["fetch"]
+        },
+
+        "illegal_op": {
+            "subops": ["illegal_subop"]
+        },
+
+        "load": {
+            "subops": ["load"]
+        },
+
+        "misc_mem": {
+            "subops": ["misc_mem"]
+        },
+
+        "op_imm": {
+            "subops": ["op_imm"]
+        },
+
+        "auipc": {
+            "subops": ["auipc"]
+        },
+
+        "store": {
+            "subops": ["store"]
+        },
+
+        "op": {
+            "subops": ["op"]
+        },
+
+        "lui": {
+            "subops": ["lui"]
+        },
+
+        "branch": {
+            "subops": ["branch"]
+        },
+
+        "jalr": {
+            "subops": ["jalr"]
+        },
+
+        "jal": {
+            "subops": ["jal"]
+        },
+
+        "system": {
+            "subops": ["system"]
+        }
+    },
+
+    "subop": {
+        "illegal_subop": {
+            "cs_pc_mux_sel": "pc_sel_invalid"
+        },
+
+        "fetch": {
+            "cs_inst_write_en": 1,
+            "cs_mem_addr_sel": "addr_sel_pc",
+            "cs_mem_read_en": 1,
+            "cs_mem_width_sel": "mem_width_4"
+        },
+
+        "load": {
+            "cs_mem_addr_sel": "addr_sel_alu",
+            "cs_mem_read_en": 1,
+            "cs_alu_b_sel": "b_sel_imm_i",
+            "cs_alu_ctrl_sel": "ctrl_sel_add",
+            "cs_reg_write_rd_sel": "reg_write_c_mem",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "misc_mem": {
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "op_imm": {
+            "cs_alu_b_sel": "b_sel_imm_i",
+            "cs_alu_ctrl_sel": "ctrl_sel_funct",
+            "cs_reg_write_rd_sel": "reg_write_c_alu",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "auipc": {
+            "cs_reg_write_rd_sel": "reg_write_c_auipc",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "store": {
+            "cs_mem_addr_sel": "addr_sel_alu",
+            "cs_mem_write_en": 1,
+            "cs_mem_width_sel": "mem_width_funct3",
+            "cs_alu_b_sel": "b_sel_imm_s",
+            "cs_alu_ctrl_sel": "ctrl_sel_add",
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "op": {
+            "cs_alu_twos_b": 1,
+            "cs_alu_b_sel": "b_sel_reg",
+            "cs_alu_ctrl_sel": "ctrl_sel_funct",
+            "cs_reg_write_rd_sel": "reg_write_c_alu",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "lui": {
+            "cs_reg_write_rd_sel": "reg_write_c_lui",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        },
+
+        "branch": {
+            "cs_alu_twos_b": 1,
+            "cs_alu_b_sel": "b_sel_reg",
+            "cs_alu_ctrl_sel": "ctrl_sel_branch",
+            "cs_pc_mux_sel": "pc_sel_branch"
+        },
+
+        "jalr": {
+            "cs_alu_b_sel": "b_sel_imm_i",
+            "cs_alu_ctrl_sel": "ctrl_sel_funct",
+            "cs_reg_write_rd_sel": "reg_write_c_pc_4",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_alu"
+        },
+
+        "jal": {
+            "cs_reg_write_rd_sel": "reg_write_c_pc_4",
+            "cs_reg_write_rd_en": 1,
+            "cs_pc_mux_sel": "pc_sel_pc_inst_j"
+        },
+
+
+        "system": {
+            "cs_pc_mux_sel": "pc_sel_pc_4"
+        }
+    }
+}

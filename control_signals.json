@@ -1,0 +1,57 @@
+{
+    "cs_inst_write_en": {
+        "type": "num",
+        "bits": 1
+    },
+
+    "cs_mem_addr_sel": {
+        "type": "mux",
+        "values": ["addr_sel_pc", "addr_sel_alu", "addr_sel_trap_base"]
+    },
+
+    "cs_mem_read_en": {
+        "type": "num",
+        "bits": 1
+    },
+
+    "cs_mem_write_en": {
+        "type": "num",
+        "bits": 1
+    },
+
+    "cs_mem_width_sel": {
+        "type": "mux",
+        "values": ["mem_width_4", "mem_width_funct3"]
+    },
+
+    "cs_alu_twos_b": {
+        "type": "num",
+        "bits": 1
+    },
+
+    "cs_alu_b_sel": {
+        "type": "mux",
+        "values": ["b_sel_reg", "b_sel_imm_i", "b_sel_imm_s"]
+    },
+
+    "cs_alu_ctrl_sel": {
+        "type": "mux",
+        "values": ["ctrl_sel_funct", "ctrl_sel_branch", "ctrl_sel_add"]
+    },
+
+    "cs_reg_write_rd_sel": {
+        "type": "mux",
+        "values": ["reg_write_c_alu", "reg_write_c_mem", "reg_write_c_csr", "reg_write_c_pc_4", "reg_write_c_lui", "reg_write_c_auipc"]
+    },
+
+    "cs_reg_write_rd_en": {
+        "type": "num",
+        "bits": 1
+    },
+
+    "cs_pc_mux_sel": {
+        "type": "mux",
+        "values": ["pc_sel_pc", "pc_sel_pc_4", "pc_sel_pc_inst_j", "pc_sel_alu", "pc_sel_branch", "pc_sel_csr_mepc", "pc_sel_mem_dout", "pc_sel_invalid"]
+    }
+}
+
