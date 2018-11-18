@@ -14,6 +14,7 @@ module csr_reg_sim();
     reg [11:0] addr;
     reg write_en;
     reg read_en;
+    reg [1:0] write_type;
 
     wire [31:0] dout;
 
@@ -31,6 +32,7 @@ module csr_reg_sim();
 
     //Control Out
     wire mstatus_mie_out;
+
     wire mstatus_mpie_out;
 
     wire mip_msip_out;
@@ -48,6 +50,7 @@ module csr_reg_sim();
         .addr(addr),
         .write_en(write_en),
         .read_en(read_en),
+        .write_type(write_type),
         .dout(dout),
         .trap_mie(trap_mie),
         .trap_mpie(trap_mpie),
@@ -81,6 +84,7 @@ module csr_reg_sim();
         addr = 'd0;
         write_en = 'd0;
         read_en = 'd0;
+        write_type = 'd0;
 
         // Control In
         trap_mie = 'd0;
@@ -131,7 +135,7 @@ module csr_reg_sim();
         forever #10 clk = ~clk;
     end
 
-    
+
     initial begin
         int tests_passed;
         int tests_total;
@@ -155,7 +159,7 @@ module csr_reg_sim();
         end
 
         `CHECK(mstatus_mie_out, 'd0);
-        
+
         `CHECK(mie_msie_out, 'd0);
         `CHECK(mie_mtie_out, 'd0);
         `CHECK(mie_meie_out, 'd0);
@@ -172,7 +176,7 @@ module csr_reg_sim();
         // Mstatus
         addr = 'h300;
         din = 'h8;
-        
+
         csr_regs_vals_expected['h300] = 'h8;
 
         @(posedge clk);
@@ -184,7 +188,7 @@ module csr_reg_sim();
         // Mie
         addr = 'h304;
         din = 'h008;
-        
+
         @(posedge clk);
         #1
 
@@ -360,6 +364,57 @@ module csr_reg_sim();
         end
 
         @(posedge clk);
+        #1
+
+        write_type = 'd2;
+        read_en = 'd0;
+
+        addr = 'h304; //mie
+
+        din = 'h8; // Clear msie
+
+        write_en = 'd1;
+
+        csr_regs_vals_expected['h304] = 'h880;
+
+        @(posedge clk);
+        #1
+
+        write_en = 'd0;
+        read_en = 'd1;
+        for (int i = 1; i <= 22; i++) begin
+            #1
+            addr = csr_regs[i];
+            #1
+            `CHECK(dout, csr_regs_vals_expected[csr_regs[i]]);
+        end
+
+        @(posedge clk);
+        #1
+
+        write_type = 'd1;
+        read_en = 'd0;
+
+        addr = 'h304;
+
+        din = 'h8;
+
+        write_en = 'd1;
+
+        csr_regs_vals_expected['h304] = 'h888;
+
+        @(posedge clk);
+        #1
+
+        write_en = 'd0;
+        read_en = 'd1;
+
+        for (int i = 1; i <= 22; i++) begin
+            #1
+            addr = csr_regs[i];
+            #1
+            `CHECK(dout, csr_regs_vals_expected[csr_regs[i]]);
+        end
 
         $display("%0d/%0d checks passed", tests_passed, tests_total);
 

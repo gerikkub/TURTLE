@@ -8,6 +8,7 @@ module csr_reg(
     input [31:0] din,
     input [11:0] addr,
     input write_en,
+    input [1:0] write_type,
     input read_en,
 
     output [31:0] dout,
@@ -116,7 +117,7 @@ module csr_reg(
 
         mcause_int = 'd0;
         mcause_code = 'd0;
-        
+
         mtval = 'd0;
     end
 
@@ -139,7 +140,7 @@ module csr_reg(
 
             mcause_int = 'd0;
             mcause_code = 'd0;
-            
+
             mtval = 'd0;
         end else begin
             if (trap_wr_en == 'd1) begin
@@ -154,29 +155,104 @@ module csr_reg(
                 case (addr)
                   'h300:
                     begin
-                        mstatus_mie <= din[3];
-                        mstatus_mpie <= din[7];
+                        if (write_type == 'd0) begin
+                            mstatus_mie <= din[3];
+                            mstatus_mpie <= din[7];
+                        end else if (write_type == 'd1) begin
+                            mstatus_mie <= mstatus_mie | din[3];
+                            mstatus_mpie <= mstatus_mie | din[7];
+                        end else if (write_type == 'd2) begin
+                            mstatus_mie <= mstatus_mie & (~din[3]);
+                            mstatus_mpie <= mstatus_mie & (~din[7]);
+                        end else begin
+                            mstatus_mie <= 'd0;
+                            mstatus_mpie <= 'd0;
+                        end
                     end
                   'h304:
                     begin
-                      mie_msie <= din[3];
-                      mie_mtie <= din[7];
-                      mie_meie <= din[11];
+                        if (write_type == 'd0) begin
+                            mie_msie <= din[3];
+                            mie_mtie <= din[7];
+                            mie_meie <= din[11];
+                        end else if (write_type == 'd1) begin
+                            mie_msie <= mie_msie | din[3];
+                            mie_mtie <= mie_mtie | din[7];
+                            mie_meie <= mie_meie | din[11];
+                        end else if (write_type == 'd2) begin
+                            mie_msie <= mie_msie & (~din[3]);
+                            mie_mtie <= mie_mtie & (~din[7]);
+                            mie_meie <= mie_meie & (~din[11]);
+                        end else begin
+                            mie_msie <= 0;
+                            mie_mtie <= 0;
+                            mie_meie <= 0;
+                        end
                     end
                   //'h306: mcouteren <= din;
-                  'h340: mscratch <= din;
-                  'h341: mepc <= din & 'hFFFFFFFC;
+                  'h340: 
+                    begin
+                        if (write_type == 'd0) begin
+                            mscratch <= din;
+                        end else if (write_type == 'd1) begin
+                            mscratch <= mscratch | din;
+                        end else if (write_type == 'd2) begin
+                            mscratch <= mscratch & (~din);
+                        end else begin
+                            mscratch <= 'hDEADC0DE;
+                        end
+                    end
+                  'h341:
+                    begin
+                        if (write_type == 'd0) begin
+                            mepc <= din & 'hFFFFFFFC;
+                        end else if (write_type == 'd1) begin
+                            mepc <= (mepc | din) & 'hFFFFFFFC;
+                        end else if (write_type == 'd2) begin
+                            mepc <= (mepc & (~din)) & 'hFFFFFFFC;
+                        end else begin
+                            mepc <= 'hDEADC0DE;
+                        end
+                    end
                   'h342:
                     begin
-                      mcause_int <= din[31];
-                      mcause_code <= din[30:0];
+                        if (write_type == 'd0) begin
+                            mcause_int <= din[31];
+                            mcause_code <= din[30:0];
+                        end else if (write_type == 'd1) begin
+                            mcause_int <= mcause_int | din[31];
+                            mcause_code <= mcause_code | din[30:0];
+                        end else if (write_type == 'd2) begin
+                            mcause_int <= mcause_int & (~din[31]);
+                            mcause_code <= mcause_code & (~din[30:0]);
+                        end else begin
+                            mcause_int <= 'd1;
+                            mcause_code <= 'h5EADC0DE;
+                        end
                     end
-                  'h343: mtval <= din;
+                  'h343:
+                    begin
+                        if (write_type == 'd0) begin
+                            mtval <= din;
+                        end else if (write_type == 'd1) begin
+                            mtval <= mtval | din;
+                        end else if (write_type == 'd2) begin
+                            mtval <= mtval & (~din);
+                        end else begin
+                            mtval <= 'hDEADC0DE;
+                        end
+                    end
                   'h344: 
                     begin
-                      mip_msip <= din[3];
-                      mip_mtip <= din[7] | set_mip_mtip;
-                      mip_meip <= din[11] | set_mip_meip;
+                        if (write_type == 'd0) begin
+                            mip_msip <= din[3];
+                        end else if (write_type == 'd1) begin
+                            mip_msip <= mip_msip | din[3];
+                        end else if (write_type == 'd2) begin
+                            mip_msip <= (mip_msip | (~din[3]));
+                        end else begin
+                            mip_msip <= 'd0;
+                        end
                     end
                   //'hB00: mcycle[31:0] <= din;
                   //'hB01: mtime[31:0] <= din;
@@ -231,7 +307,7 @@ module csr_reg(
     assign wire_mcouteren = 'd0;
 
     assign wire_mscratch = mscratch;
-    
+
     assign wire_mepc = mepc;
 
     assign wire_mcause = {mcause_int, mcause_code};
