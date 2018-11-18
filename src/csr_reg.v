@@ -1,41 +1,43 @@
 `timescale 1ns / 1ns
 
 module csr_reg(
-    input clk,
-    input reset,
+    input         clk,
+    input         reset,
 
     // Data In/Out
-    input [31:0] din,
-    input [11:0] addr,
-    input write_en,
-    input [1:0] write_type,
-    input read_en,
+    input [31:0]  din,
+    input [11:0]  addr,
+    input         write_en,
+    input [1:0]   write_type,
+    input         read_en,
 
     output [31:0] dout,
 
     // Control In
-    input trap_mie,
-    input trap_mpie,
-    input [31:0] trap_pc_in,
-    input trap_int,
-    input [30:0] trap_cause,
-    input [31:0] trap_val,
-    input trap_wr_en,
+    input         trap_mie,
+    input         trap_mpie,
+    input [31:0]  trap_pc_in,
+    input         trap_int,
+    input [30:0]  trap_cause,
+    input [31:0]  trap_val,
+    input         trap_wr_en,
 
-    input set_mip_mtip,
-    input set_mip_meip,
+    input         set_mip_mtip,
+    input         set_mip_meip,
 
     //Control Out
-    output mstatus_mie_out,
-    output mstatus_mpie_out,
+    output        mstatus_mie_out,
+    output        mstatus_mpie_out,
 
-    output mip_msip_out,
-    output mip_mtip_out,
-    output mip_meip_out,
+    output        mip_msip_out,
+    output        mip_mtip_out,
+    output        mip_meip_out,
 
-    output mie_msie_out,
-    output mie_mtie_out,
-    output mie_meie_out
+    output        mie_msie_out,
+    output        mie_mtie_out,
+    output        mie_meie_out,
+
+    output [31:0] mtvec_out
     );
 
     wire [31:0] dout_temp;
@@ -281,6 +283,9 @@ module csr_reg(
     assign mie_msie_out = mie_msie;
     assign mie_mtie_out = mie_mtie;
     assign mie_meie_out = mie_meie;
+
+    assign mtvec_out = {wire_mtvec[31:2], 2'b0};
+
 
     // Data Out
     assign wire_mvendorid = 'd0;

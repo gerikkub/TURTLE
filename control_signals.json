@@ -4,6 +4,11 @@
         "bits": 1
     },
 
+    "cs_csr_source": {
+        "type": "mux",
+        "values": ["csr_source_mem", "csr_source_inst"]
+    },
+
     "cs_mem_addr_sel": {
         "type": "mux",
         "values": ["addr_sel_pc", "addr_sel_alu", "addr_sel_trap_base"]

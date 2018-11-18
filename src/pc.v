@@ -8,7 +8,7 @@ module pc(
     input [31:0] alu_out,
     input [31:0] inst_imm_j,
     input [31:0] inst_imm_b,
-    input [31:0] csr_mepc,
+    input [31:0] csr_mtvec,
     input [31:0] mem_dout,
     input take_branch,
 
@@ -41,7 +41,7 @@ module pc(
                            (pc_mux_sel == 'd2) ? pc_reg + inst_imm_j :
                            (pc_mux_sel == 'd3) ? {alu_out[31:1], 1'b0} :
                            (pc_mux_sel == 'd4) ? branch_addr :
-                           (pc_mux_sel == 'd5) ? csr_mepc :
+                           (pc_mux_sel == 'd5) ? csr_mtvec :
                            (pc_mux_sel == 'd6) ? mem_dout :
                            'hFFFFFFFF;
 

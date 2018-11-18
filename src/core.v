@@ -5,6 +5,7 @@
 `include "src/reg_file.v"
 `include "src/pc.v"
 `include "src/cs_mapper_mod.v"
+`include "src/csr_reg.v"
 
 
 module core(
@@ -18,9 +19,12 @@ module core(
     output mem_write_en,
     output [1:0] mem_width,
 
+    input mem_csr_read_en,
+    input mem_csr_write_en,
+
     input ext_interrupt
     );
-    
+
     wire cs_inst_write_en;
 
     reg [31:0] instruction;
@@ -39,6 +43,9 @@ module core(
     wire [31:0] inst_imm_u;
     wire [31:0] inst_imm_j;
 
+    wire [11:0] inst_csr_addr;
+    wire [31:0] inst_csr_zimm;
+
     assign inst_rd = instruction[11:7];
     assign inst_rs1 = instruction[19:15];
     assign inst_rs2 = instruction[24:20];
@@ -52,6 +59,10 @@ module core(
     assign inst_imm_b = {{20{instruction[31]}}, instruction[7], instruction[30:25], instruction[11:8], 1'b0};
     assign inst_imm_u = {instruction[31:12], 12'b0};
     assign inst_imm_j = {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:25], instruction[24:21], 1'b0};
+
+    assign inst_csr_addr = instruction[31:21];
+    assign inst_csr_zimm = {27'b0, instruction[19:15]};
+
 
     always @(posedge clk) begin
         if (reset == 'd0) begin
@@ -67,18 +78,96 @@ module core(
 
     // CSR
 
-    reg [31:0] dummy_mtvec;
+
     reg [31:0] dummy_mepc;
 
-    initial begin
-        dummy_mtvec <= 'd0;
-        dummy_mepc <= 'd0;
-    end
+    wire cs_csr_source;
 
-    always @(posedge clk) begin
-        dummy_mtvec <= 'd0;
-        dummy_mepc <= 'd0;
-    end
+    wire [11:0] csr_addr;
+    wire [31:0] csr_din;
+    wire [31:0] csr_dout;
+    wire csr_write_en;
+    wire [1:0] csr_write_type;
+    wire csr_read_en;
+
+    wire csr_trap_mie;
+    wire csr_trap_mpie;
+    wire [31:0] csr_trap_pc_in;
+    wire csr_trap_int;
+    wire [30:0] csr_trap_cause;
+    wire [31:0] csr_trap_val;
+    wire csr_trap_wr_en;
+
+    wire csr_set_mip_mtip;
+    wire csr_set_mip_meip;
+
+    wire csr_mstatus_mie_out;
+    wire csr_mstatus_mpie_out;
+
+    wire csr_mip_msip_out;
+    wire csr_mip_mtip_out;
+    wire csr_mip_meip_out;
+    wire csr_mie_msie_out;
+    wire csr_mie_mtie_out;
+    wire csr_mie_meie_out;
+    wire [31:0] csr_mtvec_out;
+
+    wire csr_inst_write_en;
+    wire [1:0] csr_inst_write_type;
+    wire csr_inst_read_en;
+
+    wire [31:0] csr_inst_addr;
+    wire [31:0] csr_inst_din;
+
+    csr_reg csr_reg(
+        .clk(clk),
+        .reset(reset),
+        .din(csr_din),
+        .addr(csr_addr),
+        .write_en(csr_write_en),
+        .write_type(csr_write_type),
+        .read_en(csr_read_en),
+        .dout(csr_dout),
+        .trap_mie(csr_trap_mie),
+        .trap_mpie(csr_trap_mpie),
+        .trap_pc_in(csr_trap_pc_in),
+        .trap_int(csr_trap_int),
+        .trap_cause(csr_trap_cause),
+        .trap_val(csr_trap_val),
+        .trap_wr_en(csr_trap_wr_en),
+        .set_mip_mtip(csr_set_mip_mtip),
+        .set_mip_meip(csr_set_mip_meip),
+        .mstatus_mie_out(csr_mstatus_mie_out),
+        .mstatus_mpie_out(csr_mstatus_mpie_out),
+        .mip_msip_out(csr_mip_msip_out),
+        .mip_mtip_out(csr_mip_mtip_out),
+        .mip_meip_out(csr_mip_meip_out),
+        .mie_msie_out(csr_mie_msie_out),
+        .mie_mtie_out(csr_mie_mtie_out),
+        .mie_meie_out(csr_mie_meie_out),
+        .mtvec_out(csr_mtvec_out)
+    );
+
+    assign csr_addr = (cs_csr_source == 'd0) ? mem_din : csr_inst_addr;
+    assign csr_din = (cs_csr_source == 'd0) ? mem_addr : csr_inst_din;
+    assign csr_write_en = (cs_csr_source == 'd0) ? mem_csr_write_en : csr_inst_write_en;
+    assign csr_read_en = (cs_csr_source == 'd0) ? mem_csr_read_en : csr_inst_read_en;
+    assign csr_write_type = (cs_csr_source == 'd0) ? 'd0 : csr_inst_write_type;
+
+
+    assign csr_inst_addr = inst_csr_addr;
+
+    assign csr_inst_din = (inst_funct3[2] == 'd0) ? reg_file_rs1 : inst_csr_zimm;
+
+    // Not CSRRS or CSRRC with rd==x0
+    assign csr_inst_write_en = ~(inst_funct3[1] == 'b1 && inst_rd == 'd0);
+
+    // Not CSRRW with rs1==x0
+    assign csr_inst_read_en = ~(inst_funct3[1:0] == 'b01 && inst_rs1 == 'd0);
+
+    assign csr_write_type = inst_funct3[1:0];
+
+
 
     // Memory Bus
 
@@ -95,7 +184,7 @@ module core(
 
     assign mem_addr = (cs_mem_addr_sel == 'd0) ? pc_out :
                   (cs_mem_addr_sel == 'd1) ? alu_out :
-                  (cs_mem_addr_sel == 'd2) ? dummy_mtvec : // Trap Base
+                  (cs_mem_addr_sel == 'd2) ? csr_mtvec_out : // Trap Base
                   'hFFFFFFFF;
 
     assign mem_dout = reg_file_rs2;
@@ -148,7 +237,7 @@ module core(
     assign alu_b =  (cs_alu_twos_b == 'd0) ? alu_b_temp :
                     ((inst_funct7[5] == 'd0 && cs_alu_ctrl_sel == 'd0) || (alu_branch_inv == 'd0 && cs_alu_ctrl_sel == 'd1)) ? alu_b_temp :
                     (~alu_b_temp) + 'b1;
-                
+
     assign alu_ctrl = (cs_alu_ctrl_sel == 'd0) ? inst_funct3 :
                       (cs_alu_ctrl_sel == 'd1) ? alu_branch_sel :
                       (cs_alu_ctrl_sel == 'd2) ? 'b000 :
@@ -211,7 +300,7 @@ module core(
 
     assign reg_file_write_data_rd = (cs_reg_write_rd_sel == 'd0) ? alu_out :
                                     (cs_reg_write_rd_sel == 'd1) ? reg_mem_din :
-                                    (cs_reg_write_rd_sel == 'd2) ? dummy_mtvec : //CSR Reg
+                                    (cs_reg_write_rd_sel == 'd2) ? csr_mtvec_out : //CSR Reg
                                     (cs_reg_write_rd_sel == 'd3) ? pc_4_out : // PC + 4
                                     (cs_reg_write_rd_sel == 'd4) ? inst_imm_u :
                                     (cs_reg_write_rd_sel == 'd5) ? inst_imm_u + pc_out :
@@ -239,7 +328,7 @@ module core(
         .alu_out(alu_out),
         .inst_imm_j(inst_imm_j),
         .inst_imm_b(inst_imm_b),
-        .csr_mepc(dummy_mepc),
+        .csr_mtvec(csr_mtvec_out),
         .mem_dout(mem_dout),
         .pc_out(pc_out),
         .pc_4_out(pc_4_out),
@@ -249,10 +338,10 @@ module core(
 
     // Control Unit
 
-    wire [17:0] control_signals;
+    wire [18:0] control_signals;
 
     control_unit #(
-        .CS_N(17))
+        .CS_N(18))
         control_unit(
             .clk(clk),
             .reset(reset),
@@ -262,6 +351,7 @@ module core(
 
     cs_mapper_mod cs_mapper(
         .cs_alu_ctrl_sel(cs_alu_ctrl_sel),
+        .cs_csr_source(cs_csr_source),
         .cs_alu_b_sel(cs_alu_b_sel),
         .cs_reg_write_rd_en(cs_reg_write_rd_en),
         .cs_reg_write_rd_sel(cs_reg_write_rd_sel),
