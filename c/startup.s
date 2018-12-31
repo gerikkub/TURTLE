@@ -27,6 +27,13 @@ Reset_Handler:
 
 .section .text
 _start:
+
+.option push
+.option norelax
+ #auipc gp, %pcrel_hi(__global_pointer$)
+ #addi gp, gp, %pcrel_lo(1b)
+#.option pop
+
   lw sp, _estack
 
   mv a0, zero
@@ -51,7 +58,7 @@ LoopCopyDataInit:
   j LoopFillZerosbss
 
 FillZerobss:
-  lw x0, 0(a0)
+  sw x0, 0(a0)
   addi a0, a0, 4
 
 LoopFillZerosbss:
@@ -62,6 +69,7 @@ LoopFillZerosbss:
 EndLoop:
   j EndLoop
 
+.option pop
 
 
 

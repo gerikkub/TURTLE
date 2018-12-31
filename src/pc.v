@@ -23,7 +23,7 @@ module pc(
     wire [31:0] branch_addr;
 
     initial begin
-        pc_reg <= 'd4;
+        pc_reg = 'd4;
     end
 
     always @(posedge clk) begin

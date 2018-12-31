@@ -27,7 +27,7 @@ module control_unit(
     initial $readmemh("src/metadata_vector.txt", metadata_vec);
 
     initial begin
-        pipeline_state <= 'd0;
+        pipeline_state = 'd0;
     end
 
     assign opcode = (pipeline_state == 'd0) ? 'd0 : metadata_vec[inst];

@@ -99,6 +99,7 @@ SECTIONS
     __bss_start__ = _sbss;
     *(.bss)
     *(.bss*)
+    *(.sbss*)
     *(COMMON)
 
     . = ALIGN(4);
@@ -117,6 +118,9 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(4);
   } >RAM
+
+  . = 0xFFFFFFFF;
+  __magic_sim_end = .;
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

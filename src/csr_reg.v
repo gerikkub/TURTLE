@@ -125,25 +125,25 @@ module csr_reg(
 
     always @(posedge clk) begin
         if (reset == 'd0) begin
-            mstatus_mie = 'd0;
-            mstatus_mpie = 'd0;
+            mstatus_mie <= 'd0;
+            mstatus_mpie <= 'd0;
 
-            mip_msip = 'd0;
-            mip_mtip = 'd0;
-            mip_meip = 'd0;
+            mip_msip <= 'd0;
+            mip_mtip <= 'd0;
+            mip_meip <= 'd0;
 
-            mie_msie = 'd0;
-            mie_mtie = 'd0;
-            mie_meie = 'd0;
+            mie_msie <= 'd0;
+            mie_mtie <= 'd0;
+            mie_meie <= 'd0;
 
-            mscratch = 'd0;
+            mscratch <= 'd0;
 
-            mepc = 'd0;
+            mepc <= 'd0;
 
-            mcause_int = 'd0;
-            mcause_code = 'd0;
+            mcause_int <= 'd0;
+            mcause_code <= 'd0;
 
-            mtval = 'd0;
+            mtval <= 'd0;
         end else begin
             if (trap_wr_en == 'd1) begin
                 mstatus_mie <= trap_mie;

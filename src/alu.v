@@ -76,33 +76,33 @@ module alu(
     always @(*) begin
         // Set Less Than
         if (A < B)
-            set_less_than_u <= 'b1;
+            set_less_than_u = 'b1;
         else
-            set_less_than_u <= 'b0;
+            set_less_than_u = 'b0;
 
         // Set Less Than Unsigned
-        if (A & 'h80000000) begin
-            if (B & 'h80000000) begin
+        if ((A & 'h80000000) == 'h80000000) begin
+            if ((B & 'h80000000) == 'h80000000) begin
                 // Both < 0
                 if (A < B) begin
-                    set_less_than <= 'b1;
+                    set_less_than = 'b1;
                 end else begin
-                    set_less_than <= 'b0;
+                    set_less_than = 'b0;
                 end
             end else begin
                 // A < 0 && B >=0
-                set_less_than <= 'b1;
+                set_less_than = 'b1;
             end
         end else begin
-            if (B & 'h80000000) begin
+            if ((B & 'h80000000) == 'h80000000) begin
                 // A >=0 && B < 0
-                set_less_than <= 'b0;
+                set_less_than = 'b0;
             end else begin
                 // Both >= 0
                 if (A < B) begin
-                    set_less_than <= 'b1;
+                    set_less_than = 'b1;
                 end else begin
-                    set_less_than <= 'b0;
+                    set_less_than = 'b0;
                 end
 
             end
@@ -110,38 +110,38 @@ module alu(
 
         // Shift Left
         case(B[4:0])
-            'd0: shift_left <= A << 'd0;
-            'd1: shift_left <= A << 'd1;
-            'd2: shift_left <= A << 'd2;
-            'd3: shift_left <= A << 'd3;
-            'd4: shift_left <= A << 'd4;
-            'd5: shift_left <= A << 'd5;
-            'd6: shift_left <= A << 'd6;
-            'd7: shift_left <= A << 'd7;
-            'd8: shift_left <= A << 'd8;
-            'd9: shift_left <= A << 'd9;
-            'd10: shift_left <= A << 'd10;
-            'd11: shift_left <= A << 'd11;
-            'd12: shift_left <= A << 'd12;
-            'd13: shift_left <= A << 'd13;
-            'd14: shift_left <= A << 'd14;
-            'd15: shift_left <= A << 'd15;
-            'd16: shift_left <= A << 'd16;
-            'd17: shift_left <= A << 'd17;
-            'd18: shift_left <= A << 'd18;
-            'd19: shift_left <= A << 'd19;
-            'd20: shift_left <= A << 'd20;
-            'd21: shift_left <= A << 'd21;
-            'd22: shift_left <= A << 'd22;
-            'd23: shift_left <= A << 'd23;
-            'd24: shift_left <= A << 'd24;
-            'd25: shift_left <= A << 'd25;
-            'd26: shift_left <= A << 'd26;
-            'd27: shift_left <= A << 'd27;
-            'd28: shift_left <= A << 'd28;
-            'd29: shift_left <= A << 'd29;
-            'd30: shift_left <= A << 'd30;
-            'd31: shift_left <= A << 'd31;
+            'd0: shift_left = A << 'd0;
+            'd1: shift_left = A << 'd1;
+            'd2: shift_left = A << 'd2;
+            'd3: shift_left = A << 'd3;
+            'd4: shift_left = A << 'd4;
+            'd5: shift_left = A << 'd5;
+            'd6: shift_left = A << 'd6;
+            'd7: shift_left = A << 'd7;
+            'd8: shift_left = A << 'd8;
+            'd9: shift_left = A << 'd9;
+            'd10: shift_left = A << 'd10;
+            'd11: shift_left = A << 'd11;
+            'd12: shift_left = A << 'd12;
+            'd13: shift_left = A << 'd13;
+            'd14: shift_left = A << 'd14;
+            'd15: shift_left = A << 'd15;
+            'd16: shift_left = A << 'd16;
+            'd17: shift_left = A << 'd17;
+            'd18: shift_left = A << 'd18;
+            'd19: shift_left = A << 'd19;
+            'd20: shift_left = A << 'd20;
+            'd21: shift_left = A << 'd21;
+            'd22: shift_left = A << 'd22;
+            'd23: shift_left = A << 'd23;
+            'd24: shift_left = A << 'd24;
+            'd25: shift_left = A << 'd25;
+            'd26: shift_left = A << 'd26;
+            'd27: shift_left = A << 'd27;
+            'd28: shift_left = A << 'd28;
+            'd29: shift_left = A << 'd29;
+            'd30: shift_left = A << 'd30;
+            'd31: shift_left = A << 'd31;
         endcase
     end
 

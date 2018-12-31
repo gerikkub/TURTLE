@@ -43,7 +43,7 @@ module core(
     wire [31:0] inst_imm_u;
     wire [31:0] inst_imm_j;
 
-    wire [11:0] inst_csr_addr;
+    wire [10:0] inst_csr_addr;
     wire [31:0] inst_csr_zimm;
 
     assign inst_rd = instruction[11:7];
@@ -116,7 +116,7 @@ module core(
     wire [1:0] csr_inst_write_type;
     wire csr_inst_read_en;
 
-    wire [31:0] csr_inst_addr;
+    wire [11:0] csr_inst_addr;
     wire [31:0] csr_inst_din;
 
     csr_reg csr_reg(
@@ -148,14 +148,14 @@ module core(
         .mtvec_out(csr_mtvec_out)
     );
 
-    assign csr_addr = (cs_csr_source == 'd0) ? mem_din : csr_inst_addr;
+    assign csr_addr = (cs_csr_source == 'd0) ? mem_din[11:0] : csr_inst_addr;
     assign csr_din = (cs_csr_source == 'd0) ? mem_addr : csr_inst_din;
     assign csr_write_en = (cs_csr_source == 'd0) ? mem_csr_write_en : csr_inst_write_en;
     assign csr_read_en = (cs_csr_source == 'd0) ? mem_csr_read_en : csr_inst_read_en;
     assign csr_write_type = (cs_csr_source == 'd0) ? 'd0 : csr_inst_write_type;
 
 
-    assign csr_inst_addr = inst_csr_addr;
+    assign csr_inst_addr = {1'b0, inst_csr_addr};
 
     assign csr_inst_din = (inst_funct3[2] == 'd0) ? reg_file_rs1 : inst_csr_zimm;
 
@@ -264,7 +264,7 @@ module core(
                             (inst_funct3 == 'd5) ? ~br_lt :
                             (inst_funct3 == 'd6) ? br_ltu :
                             (inst_funct3 == 'd7) ? ~br_ltu :
-                            'bX;
+                            1'b0;
 
     // Register File
 
