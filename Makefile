@@ -6,9 +6,22 @@ ASM_DIR = asm
 
 C_DIR = c
 
-MICROCODE = src/cs_mapper_mod.v src/microcode_mod.v src/metadata_vector.txt opcode_vector.txt subop_vector.txt
+TOP_SRC_NAME = core
+
+
+VERILATOR_DIR = verilator
+
+VERILATOR_OBJ_DIR = obj_dir
+
+MICROCODE = src/cs_mapper_mod.v src/microcode_mod.v src/metadata_vector.txt src/opcode_vector.txt src/subop_vector.txt
 
 SRCS = $(wildcard $(SRC_DIR)/*.v)
+
+VERILATOR_CPP_FLAGS = -g -std=c++14
+
+VERILATOR_FLAGS = --trace -CFLAGS '$(VERILATOR_CPP_FLAGS)'
+
+TOP_SRC = $(TOP_SRC_NAME).v
 
 MICROCODE_FILES = $(notdir $(MICROCODE))
 
@@ -33,6 +46,7 @@ C_BINS = $(addsuffix .bin, $(basename $(C_SRCS)))
 
 C_MEMS = $(addsuffix .bin.mem, $(basename $(C_SRCS)))
 
+
 TARGETS = $(addprefix bin/, $(basename $(FILES)))
 
 PREFIX = riscv32-unknown-elf
@@ -45,7 +59,13 @@ LD_SCRIPT = $(C_DIR)/startup.ld
 
 STARTUP_ASM = $(C_DIR)/startup.s
 
-all : $(TARGETS) $(ASM_MEMS) $(C_MEMS)
+VERILATOR_EXE = $(VERILATOR_OBJ_DIR)/V$(TOP_SRC_NAME)
+
+VERILATOR_OBJS = $(VERILATOR_OBJ_DIR)/V$(TOP_SRC_NAME).cpp
+
+VERILATOR_SIM_SRCS = $(wildcard $(VERILATOR_DIR)/*.cpp) $(wildcard $(VERILATOR_DIR)/*.hpp)
+
+all : $(TARGETS) $(ASM_MEMS) $(C_MEMS) $(VERILATOR_EXE)
 
 bin/% : $(SIM_DIR)/%.v $(SRCS) $(MICROCODE)
 	mkdir -p bin
@@ -62,7 +82,7 @@ $(ASM_OBJS): $(ASM_SRCS)
 
 $(C_MEMS): $(C_BINS)
 $(C_BINS): $(C_ELFS)
-$(C_ELFS): $(C_SRCS)
+$(C_ELFS): $(C_SRCS) $(LD_SCRIPT) $(STARTUP_ASM)
 
 %.o: %.s
 	riscv32-unknown-elf-as -o $@ $<
@@ -79,9 +99,23 @@ $(C_ELFS): $(C_SRCS)
 %.bin.mem: %.bin
 	xxd -g4 -c4 -e $< | awk '{print $$2}' > $@
 
+$(VERILATOR_OBJS): $(SRCS)
+	verilator -cc $(SRC_DIR)/$(TOP_SRC) --exe $(VERILATOR_SIM_SRCS) $(VERILATOR_FLAGS)
+
+$(VERILATOR_EXE): $(VERILATOR_SIM_SRCS) $(VERILATOR_OBJS)
+	cd $(VERILATOR_OBJ_DIR); make -f V$(TOP_SRC_NAME).mk
+
+.PHONY : tests run_tests clean all
+
+tests: $(VERILATOR_EXE)
+
+run_tests: tests
+	$(VERILATOR_EXE)
+
 clean:
 	rm -r bin
 	rm -f $(ASM_OBJS) $(ASM_ELFS) $(ASM_BINS) $(ASM_MEMS)
+	rm -r $(VERILATOR_OBJ_DIR)
 
 print-% : ; @echo $* = $($*)
 
