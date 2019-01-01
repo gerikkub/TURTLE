@@ -43,7 +43,7 @@ module core(
     wire [31:0] inst_imm_u;
     wire [31:0] inst_imm_j;
 
-    wire [10:0] inst_csr_addr;
+    wire [11:0] inst_csr_addr;
     wire [31:0] inst_csr_zimm;
 
     assign inst_rd = instruction[11:7];
@@ -60,7 +60,7 @@ module core(
     assign inst_imm_u = {instruction[31:12], 12'b0};
     assign inst_imm_j = {{12{instruction[31]}}, instruction[19:12], instruction[20], instruction[30:25], instruction[24:21], 1'b0};
 
-    assign inst_csr_addr = instruction[31:21];
+    assign inst_csr_addr = instruction[31:20];
     assign inst_csr_zimm = {27'b0, instruction[19:15]};
 
 
@@ -155,7 +155,7 @@ module core(
     assign csr_write_type = (cs_csr_source == 'd0) ? 'd0 : csr_inst_write_type;
 
 
-    assign csr_inst_addr = {1'b0, inst_csr_addr};
+    assign csr_inst_addr = inst_csr_addr;
 
     assign csr_inst_din = (inst_funct3[2] == 'd0) ? reg_file_rs1 : inst_csr_zimm;
 
@@ -300,7 +300,7 @@ module core(
 
     assign reg_file_write_data_rd = (cs_reg_write_rd_sel == 'd0) ? alu_out :
                                     (cs_reg_write_rd_sel == 'd1) ? reg_mem_din :
-                                    (cs_reg_write_rd_sel == 'd2) ? csr_mtvec_out : //CSR Reg
+                                    (cs_reg_write_rd_sel == 'd2) ? csr_dout : //CSR Reg
                                     (cs_reg_write_rd_sel == 'd3) ? pc_4_out : // PC + 4
                                     (cs_reg_write_rd_sel == 'd4) ? inst_imm_u :
                                     (cs_reg_write_rd_sel == 'd5) ? inst_imm_u + pc_out :

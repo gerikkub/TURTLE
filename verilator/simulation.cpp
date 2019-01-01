@@ -12,7 +12,8 @@
 TurtleSimulation::TurtleSimulation(int ram_size,
                                    bool should_trace) :
     m_should_trace(should_trace),
-    m_rom_mem() {
+    m_rom_mem(),
+    m_dump_idx(0) {
 
     this->m_core = std::make_unique<Vcore>();
 
@@ -73,7 +74,8 @@ void TurtleSimulation::run_reset_cycles(int cycles) {
         this->m_core->clk = !this->m_core->clk;
 
         if (this->m_should_trace) {
-            m_trace_vcd->dump(i);
+            m_trace_vcd->dump(this->m_dump_idx);
+            this->m_dump_idx++;
         }
 
         this->m_core->eval();
@@ -91,7 +93,8 @@ bool TurtleSimulation::run_cycles(int cycles) {
         this->m_core->eval();
 
         if (this->m_should_trace) {
-            m_trace_vcd->dump(i);
+            m_trace_vcd->dump(this->m_dump_idx);
+            this->m_dump_idx++;
         }
 
         if (this->m_core->clk == 1) {
@@ -119,8 +122,11 @@ bool TurtleSimulation::run_to_completion(int max_cycles) {
 
         this->m_core->eval();
 
+        std::cout << "PC: " << std::hex << this->m_core->v__DOT__pc__DOT__pc_reg << std::endl;
+
         if (this->m_should_trace) {
-            m_trace_vcd->dump(i);
+            m_trace_vcd->dump(this->m_dump_idx);
+            this->m_dump_idx++;
         }
 
         if (this->m_core->clk == 1) {

@@ -45,4 +45,6 @@ private:
 
     std::unique_ptr<uint8_t[]> m_ram_mem;
     int m_ram_size;
+
+    int m_dump_idx;
 };

@@ -18,7 +18,8 @@ TEST(CTest, Counter) {
 
     ASSERT_NE(sim, nullptr);
 
-    ASSERT_TRUE(sim->load_rom("c/tests/counter/counter.bin"));
+    //ASSERT_TRUE(sim->load_rom("c/tests/counter/counter.bin"));
+    ASSERT_TRUE(sim->load_rom("c/tests/csr/csr.bin"));
 
     sim->run_reset_cycles(5);
 
