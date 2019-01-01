@@ -7,7 +7,24 @@
 #include <errno.h>
 #include <iostream>
 
+#include <gtest/gtest.h>
+
 #include "simulation.hpp"
+
+
+TEST(CTest, Counter) {
+
+    auto sim = new TurtleSimulation(4096, true);
+
+    ASSERT_NE(sim, nullptr);
+
+    ASSERT_TRUE(sim->load_rom("c/tests/counter/counter.bin"));
+
+    sim->run_reset_cycles(5);
+
+    ASSERT_TRUE(sim->run_to_completion(8000));
+}
+
 
 int main(int argc, char** argv) {
 
@@ -16,20 +33,7 @@ int main(int argc, char** argv) {
     Verilated::commandArgs(argc, argv);
     Verilated::traceEverOn(true);
 
-    auto sim = new TurtleSimulation(4096, true);
+    ::testing::InitGoogleTest(&argc, argv);
 
-    res = sim->load_rom("c/tests/main.bin");
-    if (!res) {
-        return 1;
-    }
-
-    sim->run_reset_cycles(5);
-
-    res = sim->run_to_completion(8000);
-    if (!res) {
-        return 1;
-    }
-
-    return 0;
-
+    return RUN_ALL_TESTS();
 }

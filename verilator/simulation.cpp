@@ -61,6 +61,8 @@ bool TurtleSimulation::load_rom(const std::string& rom_filename) {
     this->m_rom_mem = std::unique_ptr<uint8_t[]>(new uint8_t[this->m_rom_size]);
 
     fread(this->m_rom_mem.get(), this->m_rom_size, 1, rom_file);
+
+    return true;
 }
 
 void TurtleSimulation::run_reset_cycles(int cycles) {

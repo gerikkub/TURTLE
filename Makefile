@@ -17,11 +17,13 @@ MICROCODE = src/cs_mapper_mod.v src/microcode_mod.v src/metadata_vector.txt src/
 
 SRCS = $(wildcard $(SRC_DIR)/*.v)
 
-VERILATOR_CPP_FLAGS = -g -std=c++14
+VERILATOR_CPP_FLAGS = -g -std=c++14 -pthread -I/usr/src/gtest
 
-VERILATOR_FLAGS = --trace -CFLAGS '$(VERILATOR_CPP_FLAGS)'
+VERILATOR_FLAGS = --trace -CFLAGS '$(VERILATOR_CPP_FLAGS)' -LDFLAGS -lpthread
 
 TOP_SRC = $(TOP_SRC_NAME).v
+
+GTEST_DIR = /usr/src/gtest
 
 MICROCODE_FILES = $(notdir $(MICROCODE))
 
@@ -63,7 +65,7 @@ VERILATOR_EXE = $(VERILATOR_OBJ_DIR)/V$(TOP_SRC_NAME)
 
 VERILATOR_OBJS = $(VERILATOR_OBJ_DIR)/V$(TOP_SRC_NAME).cpp
 
-VERILATOR_SIM_SRCS = $(wildcard $(VERILATOR_DIR)/*.cpp) $(wildcard $(VERILATOR_DIR)/*.hpp)
+VERILATOR_SIM_SRCS = $(wildcard $(VERILATOR_DIR)/*.cpp) $(GTEST_DIR)/src/gtest-all.cc
 
 all : $(TARGETS) $(ASM_MEMS) $(C_MEMS) $(VERILATOR_EXE)
 
@@ -100,7 +102,7 @@ $(C_ELFS): $(C_SRCS) $(LD_SCRIPT) $(STARTUP_ASM)
 	xxd -g4 -c4 -e $< | awk '{print $$2}' > $@
 
 $(VERILATOR_OBJS): $(SRCS)
-	verilator -cc $(SRC_DIR)/$(TOP_SRC) --exe $(VERILATOR_SIM_SRCS) $(VERILATOR_FLAGS)
+	verilator --cc $(SRC_DIR)/$(TOP_SRC) --exe $(VERILATOR_SIM_SRCS) $(VERILATOR_FLAGS)
 
 $(VERILATOR_EXE): $(VERILATOR_SIM_SRCS) $(VERILATOR_OBJS)
 	cd $(VERILATOR_OBJ_DIR); make -f V$(TOP_SRC_NAME).mk
