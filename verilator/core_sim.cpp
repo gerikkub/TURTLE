@@ -14,11 +14,23 @@
 
 TEST(CTest, Counter) {
 
-    auto sim = new TurtleSimulation(4096, true);
+    auto sim = std::make_unique<TurtleSimulation>(4096, false);
 
     ASSERT_NE(sim, nullptr);
 
-    //ASSERT_TRUE(sim->load_rom("c/tests/counter/counter.bin"));
+    ASSERT_TRUE(sim->load_rom("c/tests/counter/counter.bin"));
+
+    sim->run_reset_cycles(5);
+
+    ASSERT_TRUE(sim->run_to_completion(8000));
+}
+
+TEST(CTest, CSR) {
+
+    auto sim = std::make_unique<TurtleSimulation>(4096, true);
+
+    ASSERT_NE(sim, nullptr);
+
     ASSERT_TRUE(sim->load_rom("c/tests/csr/csr.bin"));
 
     sim->run_reset_cycles(5);
