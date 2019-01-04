@@ -200,7 +200,8 @@
             "cs_csr_source": "csr_source_inst",
             "cs_reg_write_rd_sel": "reg_write_c_csr",
             "cs_reg_write_rd_en": 1,
-            "cs_pc_mux_sel": "pc_sel_pc_4"
+            "cs_pc_mux_sel": "pc_sel_pc_4",
+            "cs_reg_csr_write_override": 1
         }
     }
 }

@@ -119,6 +119,8 @@ module core(
     wire [11:0] csr_inst_addr;
     wire [31:0] csr_inst_din;
 
+    wire csr_reg_write_allow;
+
     csr_reg csr_reg(
         .clk(clk),
         .reset(reset),
@@ -167,6 +169,8 @@ module core(
 
     assign csr_write_type = inst_funct3[1:0];
 
+    assign csr_reg_write_allow = (cs_csr_source == 'd0) ? 'd0 :
+                                 csr_inst_read_en;
 
 
     // Memory Bus
@@ -270,6 +274,7 @@ module core(
 
     wire [2:0] cs_reg_write_rd_sel;
     wire cs_reg_write_rd_en;
+    wire cs_reg_csr_write_override;
 
     wire [4:0] reg_file_read_rs1;
     wire [4:0] reg_file_read_rs2;
@@ -295,8 +300,11 @@ module core(
 
     assign reg_file_read_rs1 = inst_rs1;
     assign reg_file_read_rs2 = inst_rs2;
-    assign reg_file_write_en_rd = cs_reg_write_rd_en;
     assign reg_file_write_rd = inst_rd;
+
+    // Register writes are enable and csr reg writes are allowed if override is also enabled
+    assign reg_file_write_en_rd = cs_reg_write_rd_en & ~(cs_reg_csr_write_override & ~csr_reg_write_allow);
+
 
     assign reg_file_write_data_rd = (cs_reg_write_rd_sel == 'd0) ? alu_out :
                                     (cs_reg_write_rd_sel == 'd1) ? reg_mem_din :
@@ -338,10 +346,10 @@ module core(
 
     // Control Unit
 
-    wire [18:0] control_signals;
+    wire [19:0] control_signals;
 
     control_unit #(
-        .CS_N(18))
+        .CS_N(19))
         control_unit(
             .clk(clk),
             .reset(reset),
@@ -361,6 +369,7 @@ module core(
         .cs_alu_twos_b(cs_alu_twos_b),
         .cs_inst_write_en(cs_inst_write_en),
         .cs_mem_write_en(cs_mem_write_en),
+        .cs_reg_csr_write_override(cs_reg_csr_write_override),
         .cs_pc_mux_sel(cs_pc_mux_sel),
         .control_signals(control_signals)
     );

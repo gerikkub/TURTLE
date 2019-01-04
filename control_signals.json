@@ -54,6 +54,11 @@
         "bits": 1
     },
 
+    "cs_reg_csr_write_override": {
+        "type": "num",
+        "bits": 1
+    },
+
     "cs_pc_mux_sel": {
         "type": "mux",
         "values": ["pc_sel_pc", "pc_sel_pc_4", "pc_sel_pc_inst_j", "pc_sel_alu", "pc_sel_branch", "pc_sel_csr_mepc", "pc_sel_mem_dout", "pc_sel_invalid"]
