@@ -48,6 +48,8 @@ C_BINS = $(addsuffix .bin, $(basename $(C_SRCS)))
 
 C_MEMS = $(addsuffix .bin.mem, $(basename $(C_SRCS)))
 
+C_DEBUG_ASM = $(addsuffix .bin.s, $(basename $(C_SRCS)))
+
 
 TARGETS = $(addprefix bin/, $(basename $(FILES)))
 
@@ -55,7 +57,7 @@ PREFIX = riscv32-unknown-elf
 
 CC = $(PREFIX)-gcc
 
-C_FLAGS = -static -nostdlib -O2 -Wl,-T$(LD_SCRIPT)
+C_FLAGS = -static -nostdlib -O2 -Wl,-T$(LD_SCRIPT) -I c/test_lib
 
 LD_SCRIPT = $(C_DIR)/startup.ld
 
@@ -86,6 +88,8 @@ $(C_MEMS): $(C_BINS)
 $(C_BINS): $(C_ELFS)
 $(C_ELFS): $(C_SRCS) $(LD_SCRIPT) $(STARTUP_ASM)
 
+$(C_DEBUG_ASM): $(C_ELFS)
+
 %.o: %.s
 	riscv32-unknown-elf-as -o $@ $<
 
@@ -101,15 +105,20 @@ $(C_ELFS): $(C_SRCS) $(LD_SCRIPT) $(STARTUP_ASM)
 %.bin.mem: %.bin
 	xxd -g4 -c4 -e $< | awk '{print $$2}' > $@
 
+%.bin.s: %
+	riscv32-unknown-elf-objdump -d -S $< > $@
+
 $(VERILATOR_OBJS): $(SRCS)
 	verilator --cc $(SRC_DIR)/$(TOP_SRC) --exe $(VERILATOR_SIM_SRCS) $(VERILATOR_FLAGS)
 
 $(VERILATOR_EXE): $(VERILATOR_SIM_SRCS) $(VERILATOR_OBJS)
 	cd $(VERILATOR_OBJ_DIR); make -f V$(TOP_SRC_NAME).mk
 
-.PHONY : tests run_tests clean all
+.PHONY : tests run_tests clean all debug
 
-tests: $(VERILATOR_EXE)
+debug: $(C_DEBUG_ASM)
+
+tests: $(VERILATOR_EXE) $(C_ELFS)
 
 run_tests: tests
 	$(VERILATOR_EXE)
