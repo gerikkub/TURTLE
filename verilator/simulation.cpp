@@ -40,6 +40,7 @@ TurtleSimulation::TurtleSimulation(int ram_size,
 
 TurtleSimulation::~TurtleSimulation() {
     if (this->m_should_trace) {
+        this->m_trace_vcd->flush();
         this->m_trace_vcd->close();
     }
 
@@ -121,8 +122,6 @@ bool TurtleSimulation::run_to_completion(int max_cycles) {
     for (i = 0; i < max_cycles; i++) {
 
         this->m_core->eval();
-
-        std::cout << "PC: " << std::hex << this->m_core->v__DOT__pc__DOT__pc_reg << std::endl;
 
         if (this->m_should_trace) {
             m_trace_vcd->dump(this->m_dump_idx);
