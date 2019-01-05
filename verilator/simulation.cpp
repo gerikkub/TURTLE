@@ -13,7 +13,11 @@ TurtleSimulation::TurtleSimulation(int ram_size,
                                    bool should_trace) :
     m_should_trace(should_trace),
     m_rom_mem(),
-    m_dump_idx(0) {
+    m_dump_idx(0),
+    m_have_expected_assert(false),
+    m_expected_assert(0),
+    m_have_actual_assert(false),
+    m_actual_assert(0) {
 
     this->m_core = std::make_unique<Vcore>();
 
@@ -89,6 +93,8 @@ bool TurtleSimulation::run_cycles(int cycles) {
 
     this->m_core->reset = 1;
 
+    bool success = true;
+
     for (int i = 0; i < cycles; i++) {
 
         this->m_core->eval();
@@ -101,14 +107,15 @@ bool TurtleSimulation::run_cycles(int cycles) {
         if (this->m_core->clk == 1) {
             res = do_memory_update();
             if (!res) {
-                return false;
+                success = false;
+                break;
             }
         }
 
         this->m_core->clk = !this->m_core->clk;
     }
 
-    return true;
+    return success;
 }
 
 bool TurtleSimulation::run_to_completion(int max_cycles) {
@@ -118,6 +125,8 @@ bool TurtleSimulation::run_to_completion(int max_cycles) {
     this->m_core->reset = 1;
 
     int i;
+
+    bool success = true;
 
     for (i = 0; i < max_cycles; i++) {
 
@@ -131,7 +140,12 @@ bool TurtleSimulation::run_to_completion(int max_cycles) {
         if (this->m_core->clk == 1) {
             res = do_memory_update();
             if (!res) {
-                return false;
+                success = false;
+                break;
+            }
+
+            if (should_end(&success)) {
+                break;
             }
 
             if (this->m_core->mem_write_en == 1 &&
@@ -147,10 +161,58 @@ bool TurtleSimulation::run_to_completion(int max_cycles) {
     }
 
     if (i == max_cycles) {
-        return false;
+        success = false;
     }
 
-    return true;
+    return success;
+}
+
+bool TurtleSimulation::should_end(bool* success) {
+
+    assert(success != nullptr);
+
+    if (this->m_core->mem_write_en == 1 &&
+        this->m_core->mem_addr == 0xFFFFFFFF &&
+        (this->m_core->mem_dout & 0xFF) == 0xA5) {
+        // Magic write
+
+        *success = true;
+        return true;
+    }
+
+    if (this->m_core->mem_write_en == 1 &&
+        this->m_core->mem_addr == 0xFFFFFFF4 &&
+        (this->m_core->mem_width == 2)) {
+
+        this->m_have_expected_assert = true;
+        this->m_expected_assert = this->m_core->mem_dout;
+    }
+
+
+    if (this->m_core->mem_write_en == 1 &&
+        this->m_core->mem_addr == 0xFFFFFFF8 &&
+        (this->m_core->mem_width == 2)) {
+
+        this->m_have_actual_assert = true;
+        this->m_actual_assert = this->m_core->mem_dout;
+    }
+
+    if (this->m_core->mem_write_en == 1 &&
+        this->m_core->mem_addr == 0xFFFFFFF0 &&
+        (this->m_core->mem_width == 2)) {
+        *success = false;
+
+        std::cout << "ASSERT Failure in simulation on line: " << this->m_core->mem_dout << std::endl;
+        if (this->m_have_expected_assert &&
+            this->m_have_actual_assert) {
+
+            std::cout << "Expected: " << std::hex << this->m_expected_assert << std::endl;
+            std::cout << "Actual: " << std::hex << this->m_actual_assert << std::endl;
+        }
+        return true;
+    }
+
+    return false;
 }
 
 bool TurtleSimulation::do_memory_update() {

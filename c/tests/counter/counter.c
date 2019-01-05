@@ -1,12 +1,8 @@
 
+#include "test_lib.h"
+
 volatile int my_var = 0;
 volatile int my_var2 = 0;
-
-extern volatile unsigned char __magic_sim_end;
-
-void end_sim() {
-	__magic_sim_end = 0xA5;
-}
 
 int main(int argc, char** argv) {
 
@@ -20,7 +16,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    end_sim();
+    end_sim_success();
 
     return 0;
 }

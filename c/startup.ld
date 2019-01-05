@@ -119,8 +119,17 @@ SECTIONS
     . = ALIGN(4);
   } >RAM
 
+  . = 0xFFFFFFF0;
+  __magic_sim_end_failure = .;
+
+  . = 0xFFFFFFF4;
+  __magic_sim_failure_expected = .;
+
+  . = 0xFFFFFFF8;
+  __magic_sim_failure_actual = .;
+
   . = 0xFFFFFFFF;
-  __magic_sim_end = .;
+  __magic_sim_end_success = .;
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
@@ -130,6 +139,6 @@ SECTIONS
     libgcc.a ( * )
     *(.comment)
   }
-  
+
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }

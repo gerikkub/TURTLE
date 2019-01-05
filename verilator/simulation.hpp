@@ -32,6 +32,8 @@ private:
 
     bool write_byte(uint32_t addr, uint8_t data);
 
+    bool should_end(bool* success);
+
 private:
 
     const bool m_should_trace;
@@ -47,4 +49,10 @@ private:
     int m_ram_size;
 
     int m_dump_idx;
+
+    bool m_have_expected_assert;
+    uint32_t m_expected_assert;
+
+    bool m_have_actual_assert;
+    uint32_t m_actual_assert;
 };
