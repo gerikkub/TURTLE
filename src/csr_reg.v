@@ -157,13 +157,13 @@ module csr_reg(
                 case (addr)
                   'h300:
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mstatus_mie <= din[3];
                             mstatus_mpie <= din[7];
-                        end else if (write_type == 'd1) begin
+                        end else if (write_type == 'd2) begin
                             mstatus_mie <= mstatus_mie | din[3];
                             mstatus_mpie <= mstatus_mie | din[7];
-                        end else if (write_type == 'd2) begin
+                        end else if (write_type == 'd3) begin
                             mstatus_mie <= mstatus_mie & (~din[3]);
                             mstatus_mpie <= mstatus_mie & (~din[7]);
                         end else begin
@@ -173,15 +173,15 @@ module csr_reg(
                     end
                   'h304:
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mie_msie <= din[3];
                             mie_mtie <= din[7];
                             mie_meie <= din[11];
-                        end else if (write_type == 'd1) begin
+                        end else if (write_type == 'd2) begin
                             mie_msie <= mie_msie | din[3];
                             mie_mtie <= mie_mtie | din[7];
                             mie_meie <= mie_meie | din[11];
-                        end else if (write_type == 'd2) begin
+                        end else if (write_type == 'd3) begin
                             mie_msie <= mie_msie & (~din[3]);
                             mie_mtie <= mie_mtie & (~din[7]);
                             mie_meie <= mie_meie & (~din[11]);
@@ -194,11 +194,11 @@ module csr_reg(
                   //'h306: mcouteren <= din;
                   'h340: 
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mscratch <= din;
-                        end else if (write_type == 'd1) begin
-                            mscratch <= mscratch | din;
                         end else if (write_type == 'd2) begin
+                            mscratch <= mscratch | din;
+                        end else if (write_type == 'd3) begin
                             mscratch <= mscratch & (~din);
                         end else begin
                             mscratch <= 'hDEADC0DE;
@@ -206,11 +206,11 @@ module csr_reg(
                     end
                   'h341:
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mepc <= din & 'hFFFFFFFC;
-                        end else if (write_type == 'd1) begin
-                            mepc <= (mepc | din) & 'hFFFFFFFC;
                         end else if (write_type == 'd2) begin
+                            mepc <= (mepc | din) & 'hFFFFFFFC;
+                        end else if (write_type == 'd3) begin
                             mepc <= (mepc & (~din)) & 'hFFFFFFFC;
                         end else begin
                             mepc <= 'hDEADC0DE;
@@ -218,13 +218,13 @@ module csr_reg(
                     end
                   'h342:
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mcause_int <= din[31];
                             mcause_code <= din[30:0];
-                        end else if (write_type == 'd1) begin
+                        end else if (write_type == 'd2) begin
                             mcause_int <= mcause_int | din[31];
                             mcause_code <= mcause_code | din[30:0];
-                        end else if (write_type == 'd2) begin
+                        end else if (write_type == 'd3) begin
                             mcause_int <= mcause_int & (~din[31]);
                             mcause_code <= mcause_code & (~din[30:0]);
                         end else begin
@@ -234,11 +234,11 @@ module csr_reg(
                     end
                   'h343:
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mtval <= din;
-                        end else if (write_type == 'd1) begin
-                            mtval <= mtval | din;
                         end else if (write_type == 'd2) begin
+                            mtval <= mtval | din;
+                        end else if (write_type == 'd3) begin
                             mtval <= mtval & (~din);
                         end else begin
                             mtval <= 'hDEADC0DE;
@@ -246,11 +246,11 @@ module csr_reg(
                     end
                   'h344: 
                     begin
-                        if (write_type == 'd0) begin
+                        if (write_type == 'd1) begin
                             mip_msip <= din[3];
-                        end else if (write_type == 'd1) begin
-                            mip_msip <= mip_msip | din[3];
                         end else if (write_type == 'd2) begin
+                            mip_msip <= mip_msip | din[3];
+                        end else if (write_type == 'd3) begin
                             mip_msip <= (mip_msip | (~din[3]));
                         end else begin
                             mip_msip <= 'd0;
@@ -288,10 +288,10 @@ module csr_reg(
 
 
     // Data Out
-    assign wire_mvendorid = 'd0;
-    assign wire_marchid = 'd0;
-    assign wire_mimpid = 'd0;
-    assign wire_mhartid = 'd0;
+    assign wire_mvendorid = 'hC0DE1122;
+    assign wire_marchid = 'hC0DE3344;
+    assign wire_mimpid = 'hC0DE5566;
+    assign wire_mhartid = 'hC0DE7788;
 
     assign wire_mstatus = {24'b0, mstatus_mpie, 3'b0, mstatus_mie, 3'b0};
     assign wire_misa = {misa_mxl, 4'b0, misa_ext};

@@ -167,7 +167,7 @@ module core(
     // Not CSRRW with rs1==x0
     assign csr_inst_read_en = ~(inst_funct3[1:0] == 'b01 && inst_rs1 == 'd0);
 
-    assign csr_write_type = inst_funct3[1:0];
+    assign csr_inst_write_type = inst_funct3[1:0];
 
     assign csr_reg_write_allow = (cs_csr_source == 'd0) ? 'd0 :
                                  csr_inst_read_en;
