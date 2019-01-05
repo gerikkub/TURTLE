@@ -118,7 +118,7 @@ $(VERILATOR_EXE): $(VERILATOR_SIM_SRCS) $(VERILATOR_OBJS)
 
 debug: $(C_DEBUG_ASM)
 
-tests: $(VERILATOR_EXE) $(C_ELFS)
+tests: $(VERILATOR_EXE) $(C_BINS)
 
 run_tests: tests
 	$(VERILATOR_EXE)
