@@ -57,7 +57,7 @@ PREFIX = riscv32-unknown-elf
 
 CC = $(PREFIX)-gcc
 
-C_FLAGS = -static -nostdlib -O2 -Wl,-T$(LD_SCRIPT) -I c/test_lib
+C_FLAGS = -static -nostdlib -O2 -Wl,-T$(LD_SCRIPT) -I c/test_lib -Wall -Wextra -g
 
 LD_SCRIPT = $(C_DIR)/startup.ld
 
@@ -126,6 +126,7 @@ run_tests: tests
 clean:
 	rm -r bin
 	rm -f $(ASM_OBJS) $(ASM_ELFS) $(ASM_BINS) $(ASM_MEMS)
+	rm -f $(C_ELFS) $(C_BINS) $(C_MEMS) $(C_DEBUG_ASM)
 	rm -r $(VERILATOR_OBJ_DIR)
 
 print-% : ; @echo $* = $($*)
