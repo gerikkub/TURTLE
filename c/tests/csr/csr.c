@@ -233,6 +233,87 @@ void mip_test() {
 
 }
 
+void mie_test() {
+    uint32_t mie;
+
+    // Check initial value
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, 0);
+
+    // Set MSIE bit
+    READ_SET_CSR(CSR_MIE, CSR_MIE_MSIE, mie);
+
+    TEST_ASSERT_EQ(mie, 0);
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, CSR_MIE_MSIE);
+
+    // Set MTIE bit
+    READ_SET_CSR(CSR_MIE, CSR_MIE_MTIE, mie);
+
+    TEST_ASSERT_EQ(mie, CSR_MIE_MSIE);
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE));
+
+    // Set MEIE bit
+    READ_SET_CSR(CSR_MIE, CSR_MIE_MEIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE));
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    // Clear MEIE bit
+    READ_CLEAR_CSR(CSR_MIE, CSR_MIE_MSIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    // Clear MTIE bit
+    READ_CLEAR_CSR(CSR_MIE, CSR_MIE_MTIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, CSR_MIE_MEIE);
+
+    // Clear MEIE bit
+    READ_CLEAR_CSR(CSR_MIE, CSR_MIE_MEIE, mie);
+
+    TEST_ASSERT_EQ(mie, CSR_MIE_MEIE);
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, 0);
+
+    // Set all bits
+    READ_WRITE_CSR(CSR_MIE, 0xFFFFFFFF, mie);
+
+    TEST_ASSERT_EQ(mie, 0);
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    // Clear all bits
+    READ_WRITE_CSR(CSR_MIE, 0, mie);
+
+    TEST_ASSERT_EQ(mie, (CSR_MIE_MSIE | CSR_MIE_MTIE | CSR_MIE_MEIE));
+
+    READ_CSR(CSR_MIE, mie);
+
+    TEST_ASSERT_EQ(mie, 0);
+}
+
 int main(int argc, char** argv) {
 
     (void)argc;
@@ -245,6 +326,8 @@ int main(int argc, char** argv) {
     mstatus_test();
 
     mip_test();
+
+    mie_test();
 
     end_sim_success();
 

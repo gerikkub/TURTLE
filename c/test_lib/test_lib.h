@@ -100,6 +100,10 @@ enum csr_t {
 #define CSR_MIP_MTIP BIT_N(7)
 #define CSR_MIP_MEIP BIT_N(11)
 
+#define CSR_MIE_MSIE BIT_N(3)
+#define CSR_MIE_MTIE BIT_N(7)
+#define CSR_MIE_MEIE BIT_N(11)
+
 extern volatile uint8_t __magic_sim_end_success;
 
 extern volatile uint32_t __magic_sim_end_failure;
