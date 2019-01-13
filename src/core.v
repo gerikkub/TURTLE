@@ -162,10 +162,10 @@ module core(
     assign csr_inst_din = (inst_funct3[2] == 'd0) ? reg_file_rs1 : inst_csr_zimm;
 
     // Not CSRRS or CSRRC with rd==x0
-    assign csr_inst_write_en = ~(inst_funct3[1] == 'b1 && inst_rd == 'd0);
+    assign csr_inst_write_en = ~(inst_funct3[1] == 'b1 && inst_rs1 == 'd0);
 
     // Not CSRRW with rs1==x0
-    assign csr_inst_read_en = ~(inst_funct3[1:0] == 'b01 && inst_rs1 == 'd0);
+    assign csr_inst_read_en = ~(inst_funct3[1:0] == 'b01 && inst_rd == 'd0);
 
     assign csr_inst_write_type = inst_funct3[1:0];
 
