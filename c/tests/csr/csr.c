@@ -96,7 +96,7 @@ void mstatus_test() {
     // Set MIE bit
     READ_SET_CSR(CSR_MSTATUS, CSR_MSTATUS_MIE, mstatus);
 
-    TEST_ASSERT_EQ(mstatus, CSR_MSTATUS_MIE);
+    TEST_ASSERT_EQ(mstatus, 0);
 
     READ_CSR(CSR_MSTATUS, mstatus);
 
@@ -105,7 +105,7 @@ void mstatus_test() {
     // Set MPIE bit
     READ_SET_CSR(CSR_MSTATUS, CSR_MSTATUS_MPIE, mstatus);
 
-    TEST_ASSERT_EQ(mstatus, (CSR_MSTATUS_MIE | CSR_MSTATUS_MPIE));
+    TEST_ASSERT_EQ(mstatus, CSR_MSTATUS_MIE);
 
     READ_CSR(CSR_MSTATUS, mstatus);
 
@@ -114,7 +114,7 @@ void mstatus_test() {
     // Clear MIE bit
     READ_CLEAR_CSR(CSR_MSTATUS, CSR_MSTATUS_MIE, mstatus);
 
-    TEST_ASSERT_EQ(CSR_MSTATUS, CSR_MSTATUS_MPIE);
+    TEST_ASSERT_EQ(mstatus, (CSR_MSTATUS_MIE | CSR_MSTATUS_MPIE));
 
     READ_CSR(CSR_MSTATUS, mstatus);
 
@@ -123,7 +123,7 @@ void mstatus_test() {
     // Clear MPIE
     READ_CLEAR_CSR(CSR_MSTATUS, CSR_MSTATUS_MPIE, mstatus);
 
-    TEST_ASSERT_EQ(mstatus, 0);
+    TEST_ASSERT_EQ(mstatus, CSR_MSTATUS_MPIE);
 
     READ_CSR(CSR_MSTATUS, mstatus);
 
@@ -146,6 +146,9 @@ void mstatus_test() {
 }
 
 int main(int argc, char** argv) {
+
+    (void)argc;
+    (void)argv;
 
     scratch_test();
 
