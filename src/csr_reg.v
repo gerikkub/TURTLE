@@ -71,7 +71,7 @@ module csr_reg(
 
     // Machine ISA
     localparam [1:0] misa_mxl = 'h1;
-    localparam [25:0] misa_ext = 'h10;
+    localparam [25:0] misa_ext = 'h100;
 
     // Machine Trap-Vector Base-Address
     localparam [31:2] mtvec_base = 'h1;

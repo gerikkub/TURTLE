@@ -83,6 +83,10 @@ void id_test() {
     READ_CSR(CSR_MHARTID, id);
 
     TEST_ASSERT_EQ(id, 0xC0DE7788);
+
+    READ_CSR(CSR_MISA, id);
+
+    TEST_ASSERT_EQ(id, BIT_N(30) | BIT_N(8));
 }
 
 void mstatus_test() {
