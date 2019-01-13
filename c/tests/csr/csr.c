@@ -4,7 +4,6 @@
 
 void scratch_test() {
 
-    uint32_t scratch_old;
     uint32_t scratch;
     uint32_t dummy;
 
@@ -314,6 +313,48 @@ void mie_test() {
     TEST_ASSERT_EQ(mie, 0);
 }
 
+void mepc_test() {
+
+    uint32_t mepc;
+
+    // Default value should be 0
+    READ_CSR(CSR_MEPC, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0);
+
+    // Write value
+    WRITE_CSR(CSR_MEPC, 0xC0DE1234);
+
+    READ_CSR(CSR_MEPC, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0xC0DE1234);
+
+    // Bit set
+    READ_SET_CSR(CSR_MEPC, 0xFF00FF00, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0xC0DE1234);
+
+    READ_CSR(CSR_MEPC, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0xFFDEFF34);
+
+    // Bit clear
+    READ_CLEAR_CSR(CSR_MEPC, 0xF0F0F0F0, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0xFFDEFF34);
+
+    READ_CSR(CSR_MEPC, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0x0F0E0F04);
+
+    // Clear MEPC
+    WRITE_CSR(CSR_MEPC, 0);
+
+    READ_CSR(CSR_MEPC, mepc);
+
+    TEST_ASSERT_EQ(mepc, 0);
+}
+
 int main(int argc, char** argv) {
 
     (void)argc;
@@ -328,6 +369,8 @@ int main(int argc, char** argv) {
     mip_test();
 
     mie_test();
+
+    mepc_test();
 
     end_sim_success();
 
