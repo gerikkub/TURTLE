@@ -248,12 +248,20 @@ module csr_reg(
                     begin
                         if (write_type == 'd1) begin
                             mip_msip <= din[3];
+                            mip_mtip <= din[7];
+                            mip_meip <= din[11];
                         end else if (write_type == 'd2) begin
                             mip_msip <= mip_msip | din[3];
+                            mip_mtip <= mip_mtip | din[7];
+                            mip_meip <= mip_meip | din[11];
                         end else if (write_type == 'd3) begin
-                            mip_msip <= (mip_msip | (~din[3]));
+                            mip_msip <= (mip_msip & (~din[3]));
+                            mip_mtip <= (mip_mtip & (~din[7]));
+                            mip_meip <= (mip_meip & (~din[11]));
                         end else begin
                             mip_msip <= 'd0;
+                            mip_mtip <= 'd0;
+                            mip_meip <= 'd0;
                         end
                     end
                   //'hB00: mcycle[31:0] <= din;

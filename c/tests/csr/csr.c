@@ -87,6 +87,8 @@ void id_test() {
     READ_CSR(CSR_MISA, id);
 
     TEST_ASSERT_EQ(id, BIT_N(30) | BIT_N(8));
+
+    READ_CSR(CSR_MTVEC, id);
 }
 
 void mstatus_test() {
@@ -149,6 +151,88 @@ void mstatus_test() {
     TEST_ASSERT_EQ(mstatus, 0);
 }
 
+void mip_test() {
+    uint32_t mip;
+
+    // Check initial value
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, 0);
+
+    // Set MSIP bit
+    READ_SET_CSR(CSR_MIP, CSR_MIP_MSIP, mip);
+
+    TEST_ASSERT_EQ(mip, 0);
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, CSR_MIP_MSIP);
+
+    // Set MTIP bit
+    READ_SET_CSR(CSR_MIP, CSR_MIP_MTIP, mip);
+
+    TEST_ASSERT_EQ(mip, CSR_MIP_MSIP);
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP));
+
+    // Set MEIP bit
+    READ_SET_CSR(CSR_MIP, CSR_MIP_MEIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP));
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    // Clear MEIP bit
+    READ_CLEAR_CSR(CSR_MIP, CSR_MIP_MSIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    // Clear MTIP bit
+    READ_CLEAR_CSR(CSR_MIP, CSR_MIP_MTIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, CSR_MIP_MEIP);
+
+    // Clear MEIP bit
+    READ_CLEAR_CSR(CSR_MIP, CSR_MIP_MEIP, mip);
+
+    TEST_ASSERT_EQ(mip, CSR_MIP_MEIP);
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, 0);
+
+    // Set all bits
+    READ_WRITE_CSR(CSR_MIP, 0xFFFFFFFF, mip);
+
+    TEST_ASSERT_EQ(mip, 0);
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    // Clear all bits
+    READ_WRITE_CSR(CSR_MIP, 0, mip);
+
+    TEST_ASSERT_EQ(mip, (CSR_MIP_MSIP | CSR_MIP_MTIP | CSR_MIP_MEIP));
+
+    READ_CSR(CSR_MIP, mip);
+
+    TEST_ASSERT_EQ(mip, 0);
+
+}
+
 int main(int argc, char** argv) {
 
     (void)argc;
@@ -159,6 +243,8 @@ int main(int argc, char** argv) {
     id_test();
 
     mstatus_test();
+
+    mip_test();
 
     end_sim_success();
 
