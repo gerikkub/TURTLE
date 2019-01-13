@@ -357,6 +357,50 @@ void mepc_test() {
     TEST_ASSERT_EQ(mepc, 0);
 }
 
+void mcause_test() {
+
+    uint32_t mcause;
+
+    // Default value should be 0
+    READ_CSR(CSR_MCAUSE, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0);
+
+    // Write value
+    WRITE_CSR(CSR_MCAUSE, 0x8000000F);
+
+    READ_CSR(CSR_MCAUSE, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x8000000F);
+
+    // Clear bits
+    READ_CLEAR_CSR(CSR_MCAUSE, 0x8000000C, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x8000000F);
+
+    READ_CSR(CSR_MCAUSE, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x3);
+
+    // Set bits
+    READ_SET_CSR(CSR_MCAUSE, 0x80000004, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x3);
+
+    READ_CSR(CSR_MCAUSE, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x80000007);
+
+    // Clear register
+    READ_WRITE_CSR(CSR_MCAUSE, 0, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0x80000007);
+
+    READ_CSR(CSR_MCAUSE, mcause);
+
+    TEST_ASSERT_EQ(mcause, 0);
+}
+
 int main(int argc, char** argv) {
 
     (void)argc;
@@ -373,6 +417,8 @@ int main(int argc, char** argv) {
     mie_test();
 
     mepc_test();
+
+    mcause_test();
 
     end_sim_success();
 
