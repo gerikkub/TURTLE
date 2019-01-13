@@ -88,6 +88,8 @@ void id_test() {
     TEST_ASSERT_EQ(id, BIT_N(30) | BIT_N(8));
 
     READ_CSR(CSR_MTVEC, id);
+
+    TEST_ASSERT_EQ(id, 0x8);
 }
 
 void mstatus_test() {

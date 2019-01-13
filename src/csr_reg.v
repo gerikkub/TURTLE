@@ -74,7 +74,7 @@ module csr_reg(
     localparam [25:0] misa_ext = 'h100;
 
     // Machine Trap-Vector Base-Address
-    localparam [31:2] mtvec_base = 'h1;
+    localparam [31:2] mtvec_base = 'h2;
     localparam [1:0] mtvec_mode = 'd0;
 
     // Machine Interrupt-Pending

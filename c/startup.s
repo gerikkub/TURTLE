@@ -23,6 +23,9 @@ defined in linker script */
 Reset_Handler:  
   j _start
 
+ISR_Handler:
+  j ISR_Handler
+
 .extern main
 
 .section .text
