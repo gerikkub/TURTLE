@@ -27,7 +27,7 @@ TEST(CTest, Counter) {
 
 TEST(CTest, CSR) {
 
-    auto sim = std::make_unique<TurtleSimulation>(4096, true);
+    auto sim = std::make_unique<TurtleSimulation>(4096, false);
 
     ASSERT_NE(sim, nullptr);
 
