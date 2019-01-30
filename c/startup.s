@@ -37,7 +37,7 @@ _start:
  #addi gp, gp, %pcrel_lo(1b)
 #.option pop
 
-  lw sp, _estack
+  la sp, _estack
 
   mv a0, zero
   la a1, _sdata
