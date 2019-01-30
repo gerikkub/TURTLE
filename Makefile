@@ -124,10 +124,10 @@ run_tests: tests
 	$(VERILATOR_EXE)
 
 clean:
-	rm -r bin
+	rm -fr bin
 	rm -f $(ASM_OBJS) $(ASM_ELFS) $(ASM_BINS) $(ASM_MEMS)
 	rm -f $(C_ELFS) $(C_BINS) $(C_MEMS) $(C_DEBUG_ASM)
-	rm -r $(VERILATOR_OBJ_DIR)
+	rm -fr $(VERILATOR_OBJ_DIR)
 
 print-% : ; @echo $* = $($*)
 
