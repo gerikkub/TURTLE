@@ -1,4 +1,6 @@
 
+.cache/
+build/
 bin/
 obj_dir/
 

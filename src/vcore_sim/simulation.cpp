@@ -41,7 +41,7 @@ TurtleSimulation::TurtleSimulation(int ram_size,
     this->m_core->ext_interrupt = 0;
     this->m_core->mem_din = 0;
 }
-
+close
 TurtleSimulation::~TurtleSimulation() {
     if (this->m_should_trace) {
         this->m_trace_vcd->flush();

@@ -4,7 +4,6 @@ add_library(vcore_lib
 )
 
 target_include_directories(vcore_lib PRIVATE
-    ${VCORE_DIR}
     ${VERILATOR_INCLUDE_DIRS}
 )
 

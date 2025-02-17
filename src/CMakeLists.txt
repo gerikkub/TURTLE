@@ -4,49 +4,107 @@ add_subdirectory(microcode)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(VERILATOR REQUIRED verilator)
 
-file(GLOB CORE_SRC src/*.v)
+include(CMakePrintHelpers)
 
-set(VCORE_DIR ${CMAKE_CURRENT_BINARY_DIR}/Vcore)
-set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread" -LDFLAGS -lpthread)
-message("VCORE: ${VCORE_DIR}")
-add_custom_command(
-    OUTPUT ${VCORE_DIR}/Vcore.cpp
-    OUTPUT ${VCORE_DIR}/Vcore.h
-    COMMAND verilator --cc src/core ${VERILATOR_FLAGS} -Mdir ${VCORE_DIR}
-    DEPENDS microcode
-    DEPENDS ${CORE_SRC}
-    VERBATIM
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+macro(add_verilator_library)
 
-add_custom_command(
-    OUTPUT ${VCORE_DIR}/libVcore.a
-           ${VCORE_DIR}/libverilated.a
-    COMMAND make -f Vcore.mk
-    DEPENDS ${VCORE_DIR}/Vcore.cpp
-    WORKING_DIRECTORY ${VCORE_DIR}
-)
 
-add_custom_target(vcore_verilator_lib_gen DEPENDS
-    ${VCORE_DIR}/libVcore.a
-    ${VCORE_DIR}/libverilated.a
-)
+    set(oneValueArgs TOP TOP_DIR)
+    set(multiValueArgs DEPENDS)
+    cmake_parse_arguments(arg
+        "" "${oneValueArgs}" "${multiValueArgs}"
+        ${ARGV})
 
-add_library(vcore_verilator_lib INTERFACE)
+    cmake_print_variables(arg_TOP)
+    cmake_print_variables(arg_TOP_DIR)
+    cmake_print_variables(arg_DEPENDS)
 
-target_link_libraries(vcore_verilator_lib INTERFACE
-    ${VCORE_DIR}/libVcore.a
-    ${VCORE_DIR}/libverilated.a
-    ${VERILATOR_LIBRARIES}
+    set(TOP_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/V${arg_TOP})
+    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread" -LDFLAGS -lpthread)
+
+    message("Out header: ${TOP_OBJ_DIR}/V${arg_TOP}.h")
+
+
+    add_custom_command(
+        OUTPUT ${TOP_OBJ_DIR}/V${arg_TOP}.cpp
+        OUTPUT ${TOP_OBJ_DIR}/V${arg_TOP}.h
+        COMMAND verilator ${arg_TOP_DIR}/${arg_TOP} --cc ${VERILATOR_FLAGS} -Mdir ${TOP_OBJ_DIR}
+        VERBATIM
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS ${arg_DEPENDS}
+    )
+
+    #add_custom_target(v${arg_TOP}_verilator_codegen
+    #BYPRODUCTS ${TOP_OBJ_DIR}/V${arg_TOP}.cpp
+    #${TOP_OBJ_DIR}/V${arg_TOP}.h
+    #)
+
+    add_custom_command(
+        OUTPUT ${TOP_OBJ_DIR}/libV${arg_TOP}.a
+               ${TOP_OBJ_DIR}/libverilated.a
+        COMMAND make -f V${arg_TOP}.mk
+        DEPENDS ${TOP_OBJ_DIR}/V${arg_TOP}.cpp
+        DEPENDS ${TOP_OBJ_DIR}/V${arg_TOP}.h
+        WORKING_DIRECTORY ${TOP_OBJ_DIR}
+    )
+
+    add_custom_target(v${arg_TOP}_verilator_lib_gen DEPENDS
+        ${TOP_OBJ_DIR}/libV${arg_TOP}.a
+        ${TOP_OBJ_DIR}/libverilated.a
+    )
+
+    add_library(v${arg_TOP}_verilator_lib INTERFACE)
+    target_sources(v${arg_TOP}_verilator_lib PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS ${TOP_OBJ_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+        FILES ${TOP_OBJ_DIR}/V${arg_TOP}.h ${arg_DEPENDS}
+    )
+    set_source_files_properties(
+        ${TOP_OBJ_DIR}/V${arg_TOP}.h
+        PROPERTIES GENERATE TRUE
+    )
+
+    target_link_libraries(v${arg_TOP}_verilator_lib INTERFACE
+        ${TOP_OBJ_DIR}/libV${arg_TOP}.a
+        ${TOP_OBJ_DIR}/libverilated.a
+        ${VERILATOR_LIBRARIES}
+    )
+    target_include_directories(v${arg_TOP}_verilator_lib INTERFACE
+        ${TOP_OBJ_DIR}
+        ${VERILATOR_INCLUDE_DIRS}
+    )
+    target_compile_options(v${arg_TOP}_verilator_lib INTERFACE
+        ${VERILATOR_CFLAGS}
+    )
+    add_dependencies(v${arg_TOP}_verilator_lib
+        v${arg_TOP}_verilator_lib_gen
+        #v${arg_TOP}_verilator_codegen
+        #${arg_DEPENDS}
+    )
+
+endmacro()
+
+file(GLOB_RECURSE CORE_V_SRC src/*.v)
+file(GLOB_RECURSE CORE_SV_SRC src/*.sv)
+
+set(CORE_SRC "${CORE_V_SRC};${CORE_SV_SRC}")
+
+cmake_print_variables(CORE_V_SRC)
+cmake_print_variables(CORE_SV_SRC)
+cmake_print_variables(CORE_SRC)
+
+#add_verilator_library(
+#TOP core
+#TOP_DIR src
+#DEPENDS "${CORE_SRC};microcode"
+#)
+
+add_verilator_library(
+    TOP instruction_fetch
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/instruction_fetch.sv"
 )
-target_include_directories(vcore_verilator_lib INTERFACE
-    ${VCORE_DIR}
-    ${VERILATOR_INCLUDE_DIRS}
-)
-target_compile_options(vcore_verilator_lib INTERFACE
-    ${VERILATOR_CFLAGS}
-)
-add_dependencies(vcore_verilator_lib DEPENDS vcore_verilator_lib_gen)
 
 add_subdirectory(vcore_sim)
+add_subdirectory(tests/mod)
 
