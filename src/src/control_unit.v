@@ -24,7 +24,7 @@ module control_unit(
         .control_signals(control_signals)
     );
 
-    initial $readmemh("src/metadata_vector.txt", metadata_vec);
+    initial $readmemh("src/microcode/metadata_vector.txt", metadata_vec);
 
     initial begin
         pipeline_state = 'd0;

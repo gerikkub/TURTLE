@@ -104,25 +104,10 @@ enum csr_t {
 #define CSR_MIE_MTIE BIT_N(7)
 #define CSR_MIE_MEIE BIT_N(11)
 
-extern volatile uint8_t __magic_sim_end_success;
+void end_sim_success();
 
-extern volatile uint32_t __magic_sim_end_failure;
-extern volatile uint32_t __magic_sim_failure_expected;
-extern volatile uint32_t __magic_sim_failure_actual;
+void end_sim_failure(int line);
 
-inline void end_sim_success() {
-    __magic_sim_end_success = 0xA5;
-}
-
-inline void end_sim_failure(int line) {
-    __magic_sim_end_failure = line;
-}
-
-inline void end_sim_failure_exp(int line, int expected, int actual) {
-    __magic_sim_failure_expected = expected;
-    __magic_sim_failure_actual = actual;
-    __magic_sim_end_failure = line;
-
-}
+void end_sim_failure_exp(int line, int expected, int actual);
 
 #endif

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import json
 import sys
@@ -9,53 +9,53 @@ import verilog_gen
 def isValidSignalEntry(cs_entry, name):
 
     if not "type" in cs_entry:
-        print '"type" field not found in entry: {0}'.format(name)
+        print('"type" field not found in entry: {0}'.format(name))
         return False
 
     if cs_entry["type"] == "num":
         if not "bits" in cs_entry:
-            print '"bits" field not found in entry: {0}'.format(name)
+            print('"bits" field not found in entry: {0}'.format(name))
             return False
 
         if cs_entry["bits"] is int:
-                print '"bits" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["bits"]), name)
+                print('"bits" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["bits"]), name))
                 return False
 
         bits = cs_entry["bits"]
 
         if "default" in cs_entry:
             if cs_entry["default"] is int:
-                print '"default" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["default"], name))
+                print('"default" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["default"], name)))
                 return False
 
             value = cs_entry["default"]
             bits = cs_entry["bits"]
 
             if (value < 0 or value > (2**bits)):
-                print '"default" field is out-of-range [0,{0}] in entry: {1}'.format((2**bits)-1, name)
+                print('"default" field is out-of-range [0,{0}] in entry: {1}'.format((2**bits)-1, name))
                 return False
 
     elif cs_entry["type"] == "mux":
         if not "values" in cs_entry:
-            print '"values" field not found in entry: {0}'.format(name)
+            print('"values" field not found in entry: {0}'.format(name))
             return False
 
         if cs_entry["values"] is list:
-            print '"values" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["values"]), name)
+            print('"values" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["values"]), name))
             return False
         
         values = cs_entry["values"]
 
         if ("default" in cs_entry):
                 if cs_entry["default"] is unicode:
-                    print '"default" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["default"]), name)
+                    print('"default" field has incorrect type {0} in entry: {1}'.format(type(cs_entry["default"]), name))
                     return False
 
                 if not cs_entry["default"] in values:
-                    print '"default" value is not found in values array in entry: {0}'.format(name)
+                    print('"default" value is not found in values array in entry: {0}'.format(name))
                     return False
     else:
-        print 'Unknown type {0} in entry: {1}'.format(cs_entry["type"], name)
+        print('Unknown type {0} in entry: {1}'.format(cs_entry["type"], name))
         return False
 
     return True
@@ -138,7 +138,7 @@ def getSignalValue(signal_name, signal_value, cs_bits, cs_values):
         # The signal type is mux
 
         if not signal_value in cs_values[signal_name]:
-            print "Unknown signal value {0} for signal {1}".format(signal_value, signal_name)
+            print("Unknown signal value {0} for signal {1}".format(signal_value, signal_name))
             return False, ret_num
 
 
@@ -150,7 +150,7 @@ def getSignalValue(signal_name, signal_value, cs_bits, cs_values):
         # This signal type is num
 
         if (signal_value > (2**cs_bits[signal_name]) - 1) or (signal_value < 0):
-            print "Invalid signal value {0} for signal {1}".format(signal_value, signal_name)
+            print("Invalid signal value {0} for signal {1}".format(signal_value, signal_name))
             return False, ret_num
 
         ret_num = signal_value
@@ -177,7 +177,7 @@ def generateSubopTable(subop_json, cs_bits, cs_position, cs_values, default_bitf
 
         for signal_name in subop_entry:
             if not signal_name in cs_bits:
-                print "Unknown signal name {0} in subop {1}".format(signal_name, subop_entry_name)
+                print("Unknown signal name {0} in subop {1}".format(signal_name, subop_entry_name))
                 return False, subop_bitfield_dict, subop_position_dict
 
             sig_bits = cs_bits[signal_name]
@@ -212,7 +212,7 @@ def addSubopsToOpcodeList(opcode_list, subop_list, subop_position_dict):
 
     for subop_name in subop_list:
         if not subop_name in subop_position_dict:
-            print "Subop {0} not found in subop list".format(subop_name)
+            print("Subop {0} not found in subop list".format(subop_name))
             return False
 
         opcode_list.append(subop_position_dict[subop_name])
@@ -229,7 +229,7 @@ def generateOpcodeTable(opcode_json, subop_position_dict):
     position = 0
 
     if not "inst_fetch" in opcode_json:
-        print 'Special opcode "inst_fetch" not found in opcode list'
+        print('Special opcode "inst_fetch" not found in opcode list')
         return False, opcode_list, opcode_position_dict
     
     addSubopsToOpcodeList(opcode_list, opcode_json["inst_fetch"]["subops"], subop_position_dict)
@@ -239,7 +239,7 @@ def generateOpcodeTable(opcode_json, subop_position_dict):
     del opcode_json["inst_fetch"]
 
     if not "illegal_op" in opcode_json:
-        print 'Special opcode "illegal_op" not found in opcode list'
+        print('Special opcode "illegal_op" not found in opcode list')
         return False, opcode_list, opcode_position_dict
 
     for opcode_name in opcode_json:
@@ -258,7 +258,7 @@ def generateMetadataDict(metadata_json):
 
         position = int(metadata_json[mdata_name]["opcode_position"], 16)
         if (metadata_json[mdata_name]["opcode_position"] == "00"):
-            print "Found 149: {:}".format((metadata_json[mdata_name]))
+            print("Found 149: {:}".format((metadata_json[mdata_name])))
          
         metadata_opcode_dict[position] = metadata_json[mdata_name]["opcode"]
         
@@ -310,10 +310,10 @@ def main():
     if status == False:
         return
 
-    print cs_position_dict
+    print(cs_position_dict)
 
 
-    print default_bitfield
+    print(default_bitfield)
 
     microcode_data = open(sys.argv[2])
     microcode_json = json.load(microcode_data)
@@ -333,7 +333,7 @@ def main():
     if status == False:
         return
 
-    print metadata_opcode_dict
+    print(metadata_opcode_dict)
 
 
     writeMetadataVector(metadata_opcode_dict, opcode_position_dict)
