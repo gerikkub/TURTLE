@@ -20,7 +20,7 @@ macro(add_verilator_library)
     cmake_print_variables(arg_DEPENDS)
 
     set(TOP_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/V${arg_TOP})
-    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread" -LDFLAGS -lpthread)
+    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread" -LDFLAGS -lpthread -Isrc)
 
     message("Out header: ${TOP_OBJ_DIR}/V${arg_TOP}.h")
 
@@ -93,16 +93,28 @@ cmake_print_variables(CORE_V_SRC)
 cmake_print_variables(CORE_SV_SRC)
 cmake_print_variables(CORE_SRC)
 
-#add_verilator_library(
-#TOP core
-#TOP_DIR src
-#DEPENDS "${CORE_SRC};microcode"
-#)
+add_verilator_library(
+    TOP core
+    TOP_DIR src
+    DEPENDS "${CORE_SRC};microcode"
+)
 
 add_verilator_library(
     TOP instruction_fetch
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/instruction_fetch.sv"
+)
+
+add_verilator_library(
+    TOP decode
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode.sv"
+)
+
+add_verilator_library(
+    TOP decode_inst
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode_inst.sv"
 )
 
 add_subdirectory(vcore_sim)

@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE ON)
 
 set(CMAKE_CXX_VERSION 14)
+enable_testing()
 
 add_subdirectory(src)
 

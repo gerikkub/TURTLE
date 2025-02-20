@@ -14,8 +14,12 @@ module instruction_fetch(
     input [31:0]override_pc_addr,
 
     output [31:0]inst,
+    output [31:0]inst_pc,
     output valid,
     input stall
+
+    // TODO
+    //output [31:0] exception
     );
 
     enum int unsigned {
@@ -52,6 +56,22 @@ module instruction_fetch(
     assign inst_mux = state == FETCH_AND_PRESENT ? mem_inst_in :
                                                    fetch_inst;
     assign inst = valid ? inst_mux : 'hc0defec4;
+    assign inst_pc = fetch_addr;
+
+    // Advance fetch state machine
+    always_comb begin
+        if (state == FETCH_AND_PRESENT) begin
+            if (mem_inst_valid && stall)
+                next_state = PRESENT;
+            else
+                next_state = FETCH_AND_PRESENT;
+        end else begin
+            if ((~stall) || override_pc)
+                next_state = FETCH_AND_PRESENT;
+            else
+                next_state = PRESENT;
+        end
+    end
 
     always_ff @(posedge clk) begin
         if (reset == 'd1) begin
@@ -68,20 +88,6 @@ module instruction_fetch(
         end
     end
 
-    // Advance fetch state machine
-    always_comb begin
-        if (state == FETCH_AND_PRESENT) begin
-            if (mem_inst_valid && stall)
-                next_state = PRESENT;
-            else
-                next_state = FETCH_AND_PRESENT;
-        end else begin
-            if ((~stall) || override_pc)
-                next_state = FETCH_AND_PRESENT;
-            else
-                next_state = PRESENT;
-        end
-    end
 
 endmodule
 

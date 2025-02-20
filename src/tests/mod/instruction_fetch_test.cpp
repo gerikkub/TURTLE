@@ -1,73 +1,8 @@
 
-#include <verilated.h>
-#include <verilated_vcd_c.h>
+#include "mod_test.hpp"
 #include "Vinstruction_fetch.h"
 
-#include <gtest/gtest.h>
-
-class InstructionFetchTest : public ::testing::Test {
-
-    protected:
-
-    virtual void SetUp() override {
-        vctx = std::make_unique<VerilatedContext>();
-        vcd = std::make_unique<VerilatedVcdC>();
-        mod = std::make_unique<Vinstruction_fetch>(vctx.get());
-        timeui = 0;
-
-        vctx->traceEverOn(true);
-        mod->trace(vcd.get(), 99);
-        auto ut = ::testing::UnitTest::GetInstance();
-        auto test = ut->current_test_info();
-        std::stringstream trace_name;
-        trace_name << "test_" <<
-                      test->test_suite_name() << "_" <<
-                      test->name() << ".vcd";
-            
-        vcd->open(trace_name.str().c_str());
-    }
-
-    virtual void TearDown() override {
-
-        vcd->flush();
-        vcd->close();
-
-        mod->final();
-
-        mod.reset();
-        vcd.reset();
-        vctx.reset();
-    }
-
-    void eval() {
-        mod->eval();
-        vcd->dump(timeui);
-        timeui++;
-    }
-
-    void clk() {
-        timeui += 500;
-        mod->clk = 0;
-        eval();
-
-        timeui += 500;
-        mod->clk = 1;
-        eval();
-    }
-
-    void reset() {
-        mod->reset = 1;
-        clk();
-        clk();
-        clk();
-        mod->reset = 0;
-    }
-    
-    uint64_t timeui;
-    std::unique_ptr<VerilatedContext> vctx;
-    std::unique_ptr<VerilatedVcdC> vcd;
-    std::unique_ptr<Vinstruction_fetch> mod;
-};
+typedef ClockedModTest<Vinstruction_fetch> InstructionFetchTest;
 
 TEST_F(InstructionFetchTest, Reset) {
 
@@ -77,6 +12,7 @@ TEST_F(InstructionFetchTest, Reset) {
     ASSERT_EQ(mod->valid, 0);
     ASSERT_EQ(mod->mem_fetch_addr, 0);
     ASSERT_EQ(mod->inst, 0xc0defec4);
+    ASSERT_EQ(mod->inst_pc, 0);
 }
 
 TEST_F(InstructionFetchTest, Fetch) {
@@ -95,6 +31,7 @@ TEST_F(InstructionFetchTest, Fetch) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x1122ABCD);
+    ASSERT_EQ(mod->inst_pc, 0);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 1);
@@ -104,6 +41,7 @@ TEST_F(InstructionFetchTest, Fetch) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x1234AABB);
+    ASSERT_EQ(mod->inst_pc, 4);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 1);
@@ -113,6 +51,7 @@ TEST_F(InstructionFetchTest, Fetch) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x11223344);
+    ASSERT_EQ(mod->inst_pc, 8);
 }
 
 TEST_F(InstructionFetchTest, Stall) {
@@ -131,6 +70,7 @@ TEST_F(InstructionFetchTest, Stall) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x1122ABCD);
+    ASSERT_EQ(mod->inst_pc, 0);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 1);
@@ -142,27 +82,32 @@ TEST_F(InstructionFetchTest, Stall) {
     ASSERT_EQ(mod->valid, 0);
     ASSERT_EQ(mod->inst, 0xc0defec4);
     ASSERT_EQ(mod->mem_fetch_addr_en, 1);
+    ASSERT_EQ(mod->inst_pc, 4);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 0);
     ASSERT_EQ(mod->mem_fetch_addr, 4);
     ASSERT_EQ(mod->valid, 0);
     ASSERT_EQ(mod->inst, 0xc0defec4);
+    ASSERT_EQ(mod->inst_pc, 4);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 0);
     ASSERT_EQ(mod->mem_fetch_addr, 4);
     ASSERT_EQ(mod->valid, 0);
     ASSERT_EQ(mod->inst, 0xc0defec4);
+    ASSERT_EQ(mod->inst_pc, 4);
 
     mod->stall = 0;
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x1234AABB);
+    ASSERT_EQ(mod->inst_pc, 4);
 
     clk();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->mem_fetch_addr, 8);
+    ASSERT_EQ(mod->inst_pc, 8);
 }
 
 TEST_F(InstructionFetchTest, Override) {
@@ -181,6 +126,7 @@ TEST_F(InstructionFetchTest, Override) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0x1122ABCD);
+    ASSERT_EQ(mod->inst_pc, 0);
 
     clk();
     ASSERT_EQ(mod->mem_fetch_addr_en, 1);
@@ -204,6 +150,7 @@ TEST_F(InstructionFetchTest, Override) {
     eval();
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->inst, 0xABCD1234);
+    ASSERT_EQ(mod->inst_pc, 0x20);
 }
 
 int main(int argc, char** argv) {
@@ -211,7 +158,6 @@ int main(int argc, char** argv) {
     int res;
 
     Verilated::commandArgs(argc, argv);
-    //Verilated::traceEverOn(true);
 
     ::testing::InitGoogleTest(&argc, argv);
 

@@ -29,15 +29,22 @@ function(add_module_test)
     )
     add_dependencies(${arg_TOP}_test
         v${arg_TOP}_verilator_lib
-        #v${arg_TOP}_verilator_codegen
     )
 
-    add_test(NAME ${arg_NAME}_test COMMAND ${arg_NAME}_test)
+    add_test(NAME ${arg_TOP}_test COMMAND ${arg_TOP}_test)
 
 endfunction()
 
 add_module_test(TOP instruction_fetch
-    SRC ${CMAKE_CURRENT_SOURCE_DIR}/instruction_fetch/instruction_fetch_test.cpp
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/instruction_fetch_test.cpp
+)
+
+add_module_test(TOP decode
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/decode.cpp
+)
+
+add_module_test(TOP decode_inst
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/decode_inst.cpp
 )
 
 
