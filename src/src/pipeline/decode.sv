@@ -10,6 +10,7 @@ module decode(
     input [31:0]inst_pc,
     input inst_valid,
     output fetch_stall,
+    input flush,
 
     output var [6:0] opcode,
     output var [4:0] rd,
@@ -39,11 +40,6 @@ module decode(
         .imm(imm),
         .valid(decode_valid));
 
-    enum int unsigned {
-        FETCH,
-        PRESENT
-    } state, next_state;
-
     reg [31:0] inst_buffer;
     reg [31:0] inst_pc_buffer;
     reg inst_buffer_valid;
@@ -52,42 +48,37 @@ module decode(
     wire [31:0] inst_pc_buffer_mux;
     wire inst_buffer_valid_mux;
 
+    wire should_ingest_inst = inst_valid &&
+                              ((~inst_buffer_valid) ||
+                               (inst_buffer_valid && ~stall));
+    wire should_advance_inst = inst_buffer_valid && ~stall && ~flush;
+
     // Fetch new instructions into the pipeline
-    assign inst_buffer_mux = state == FETCH ? inst :
-                                              inst_buffer;
-    assign inst_pc_buffer_mux = state == FETCH ? inst_pc :
-                                                  inst_pc_buffer;
-    assign inst_buffer_valid_mux =
-        state == FETCH ? inst_valid :
-                         'd1;
+    assign inst_buffer_mux = should_ingest_inst ? inst :
+                                                  inst_buffer;
+    assign inst_pc_buffer_mux = should_ingest_inst ? inst_pc :
+                                                     inst_pc_buffer;
+    // Either we are ingesting a new instruction so the buffer is valid
+    // OR we have a valid instruciton and are not advancing it
+    assign inst_buffer_valid_mux = ~flush &&
+                                   (should_ingest_inst ||
+                                    (inst_buffer_valid && ~should_advance_inst));
 
-    assign fetch_stall = state == FETCH ? stall :
-                                          'd1;
-    assign valid = inst_buffer_valid_mux;
+
+    // fetch_stall should be set when inst_buffer is
+    // valid and the output is not being sent
+    // and when not flushing
+    assign fetch_stall = ~flush && inst_buffer_valid && ~should_advance_inst;
+
+    assign valid = should_advance_inst;
     assign inst_pc_out = inst_pc_buffer;
-
-    always_comb begin
-        if (state == FETCH) begin
-            if (inst_valid && stall)
-                next_state = PRESENT;
-            else
-                next_state = FETCH;
-        end else begin
-            if (~stall)
-                next_state = FETCH;
-            else
-                next_state = PRESENT;
-        end
-    end
 
     always_ff @(posedge clk) begin
         if (reset == 'd1) begin
             inst_buffer <= 'd0;
             inst_pc_buffer <= 'd0;
             inst_buffer_valid <= 'd0;
-            state <= FETCH;
         end else begin
-            state <= next_state;
             inst_buffer <= inst_buffer_mux;
             inst_pc_buffer <= inst_pc_buffer_mux;
             inst_buffer_valid <= inst_buffer_valid_mux;

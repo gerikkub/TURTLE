@@ -4,7 +4,8 @@ project(TURTLE)
 cmake_policy(SET CMP0163 NEW)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-#set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE ON)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+add_compile_options (-fdiagnostics-color=always)
 
 set(CMAKE_CXX_VERSION 14)
 enable_testing()

@@ -20,7 +20,7 @@ macro(add_verilator_library)
     cmake_print_variables(arg_DEPENDS)
 
     set(TOP_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/V${arg_TOP})
-    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread" -LDFLAGS -lpthread -Isrc)
+    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread -fdiagnostics-color=always" -LDFLAGS -lpthread -Isrc)
 
     message("Out header: ${TOP_OBJ_DIR}/V${arg_TOP}.h")
 
