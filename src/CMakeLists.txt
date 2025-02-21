@@ -94,12 +94,6 @@ cmake_print_variables(CORE_SV_SRC)
 cmake_print_variables(CORE_SRC)
 
 add_verilator_library(
-    TOP core
-    TOP_DIR src
-    DEPENDS "${CORE_SRC};microcode"
-)
-
-add_verilator_library(
     TOP instruction_fetch
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/instruction_fetch.sv"
@@ -122,6 +116,13 @@ add_verilator_library(
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/read_registers.sv"
 )
+
+add_verilator_library(
+    TOP reg_file
+    TOP_DIR src
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/reg_file.sv"
+)
+
 
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)

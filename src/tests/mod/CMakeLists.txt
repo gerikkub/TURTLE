@@ -51,4 +51,8 @@ add_module_test(TOP read_registers
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/read_registers.cpp
 )
 
+add_module_test(TOP reg_file
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/reg_file.cpp
+)
+
 
