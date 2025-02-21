@@ -47,4 +47,8 @@ add_module_test(TOP decode_inst
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/decode_inst.cpp
 )
 
+add_module_test(TOP read_registers
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/read_registers.cpp
+)
+
 

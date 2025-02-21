@@ -117,6 +117,12 @@ add_verilator_library(
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode_inst.sv"
 )
 
+add_verilator_library(
+    TOP read_registers
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/read_registers.sv"
+)
+
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)
 
