@@ -130,6 +130,12 @@ add_verilator_library(
 )
 
 add_verilator_library(
+    TOP alu_tester
+    TOP_DIR src/test
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/alu_tester.sv"
+)
+
+add_verilator_library(
     TOP execute_shift
     TOP_DIR src/execute
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"

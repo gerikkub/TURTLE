@@ -11,15 +11,28 @@ module execute_alu(
     input var [31:0]read_rs2_val,
     input read_valid,
 
+    output [32:0] in_a,
+    output [32:0] in_b,
+    output [4:0] alu_op,
+
     output processing,
-    output valid,
-    output [31:0]rd_val_out
+    output valid
     );
 
     localparam OP_IMM_OPCODE = 'b0010011;
     localparam OP_OPCODE = 'b0110011;
     localparam LUI_OPCODE = 'b0110111;
     localparam AUIPC_OPCODE = 'b0010111;
+
+    localparam ALU_ADD = 0;
+    localparam ALU_SUB = 1;
+    localparam ALU_SLT = 2;
+    localparam ALU_SLTU = 3;
+    localparam ALU_XOR = 4;
+    localparam ALU_OR = 5;
+    localparam ALU_AND = 6;
+    localparam ALU_LUI = 7;
+    localparam ALU_UNKNOWN = 8;
 
     enum int unsigned {
         ADD,
@@ -67,48 +80,32 @@ module execute_alu(
             op = UNKNOWN;
     end
 
-
     // Calculate adder inputs. Add an extra bit for SLTU op
-    wire [32:0] in_a = op == AUIPC ? {1'b0, decode_pc} :
+    assign in_a = op == AUIPC ? {1'b0, decode_pc} :
                                      {1'b0, read_rs1_val};
 
-    wire [32:0] in_b_pre = (decode_opcode == OP_IMM_OPCODE ||
-                            op == AUIPC) ? {1'b0, decode_imm} :
-                                                  {1'b0, read_rs2_val};
-    wire [32:0] in_b = (op == SUB || op == SLT || op == SLTU) ?
-                            ((~in_b_pre) + 'd1) :
-                            in_b_pre;
-
-    wire [32:0] adder_out = {in_a + in_b};
-
-    // Logical Operations
-    wire [31:0] alu_and = in_a[31:0] & in_b[31:0];
-    wire [31:0] alu_or = in_a[31:0] | in_b[31:0];
-    wire [31:0] alu_xor = in_a[31:0] ^ in_b[31:0];
-
-    wire alu_sltu = adder_out[32];
-    wire alu_slt = in_a[31] == in_b_pre[31] ? adder_out[32] :
-                   (in_a[31] == 'b1 && in_b_pre[31] == 'b0) ? 'b1 : 'b0;
-
-    always_comb begin
-    end
-
-    always_comb begin
-        case(op)
-            ADD: rd_val_out = adder_out[31:0];
-            SUB: rd_val_out = adder_out[31:0];
-            SLT: rd_val_out = {31'b0, alu_slt};
-            SLTU: rd_val_out = {31'b0, alu_sltu};
-            XOR: rd_val_out = alu_xor;
-            OR: rd_val_out = alu_or;
-            AND: rd_val_out = alu_and;
-            LUI: rd_val_out = decode_imm;
-            AUIPC: rd_val_out = adder_out[31:0];
-            UNKNOWN: rd_val_out = 'h003c0de;
-        endcase
-    end
+    assign in_b = (decode_opcode == OP_IMM_OPCODE ||
+                   decode_opcode == LUI_OPCODE ||
+                   decode_opcode == AUIPC_OPCODE) ?
+                    {1'b0, decode_imm} :
+                    {1'b0, read_rs2_val};
 
     assign valid = (op == UNKNOWN) ? 'd0 :
                                      should_handle;
+
+    always_comb begin
+        case (op)
+            ADD: alu_op = ALU_ADD;
+            SUB: alu_op = ALU_SUB;
+            SLT: alu_op = ALU_SLT;
+            SLTU: alu_op = ALU_SLTU;
+            XOR: alu_op = ALU_XOR;
+            OR: alu_op = ALU_OR;
+            AND: alu_op = ALU_AND;
+            LUI: alu_op = ALU_LUI;
+            AUIPC: alu_op = ALU_ADD;
+            UNKNOWN: alu_op = ALU_UNKNOWN;
+        endcase
+    end
 
 endmodule

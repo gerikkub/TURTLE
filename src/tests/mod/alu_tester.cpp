@@ -1,11 +1,10 @@
 
 #include "mod_test.hpp"
-#include "Vexecute_alu.h"
-#include "Vexecute_alu__Syms.h"
+#include "Valu_tester.h"
 
-typedef ModTest<Vexecute_alu> ExecuteAluTest;
+typedef ModTest<Valu_tester> AluTesterTest;
 
-TEST_F(ExecuteAluTest, Invalid) {
+TEST_F(AluTesterTest, Invalid) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -19,7 +18,7 @@ TEST_F(ExecuteAluTest, Invalid) {
     ASSERT_EQ(mod->valid, 0);
 }
 
-TEST_F(ExecuteAluTest, UnknownOp) {
+TEST_F(AluTesterTest, UnknownOp) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -34,7 +33,7 @@ TEST_F(ExecuteAluTest, UnknownOp) {
     ASSERT_EQ(mod->rd_val_out, 0x003c0de);
 }
 
-TEST_F(ExecuteAluTest, Add) {
+TEST_F(AluTesterTest, Add) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -75,7 +74,7 @@ TEST_F(ExecuteAluTest, Add) {
     ASSERT_EQ(mod->rd_val_out, 0xAABBCCDD + 0xABC);
 }
 
-TEST_F(ExecuteAluTest, Sub) {
+TEST_F(AluTesterTest, Sub) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -112,7 +111,7 @@ TEST_F(ExecuteAluTest, Sub) {
     ASSERT_EQ(mod->rd_val_out, 0);
 }
 
-TEST_F(ExecuteAluTest, Logic) {
+TEST_F(AluTesterTest, Logic) {
     eval();
 
     // OR
@@ -191,7 +190,7 @@ TEST_F(ExecuteAluTest, Logic) {
     ASSERT_EQ(mod->rd_val_out, (0xAABBCCDD ^ 0xABC));
 }
 
-TEST_F(ExecuteAluTest, Sltu) {
+TEST_F(AluTesterTest, Sltu) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -204,41 +203,57 @@ TEST_F(ExecuteAluTest, Sltu) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->ltu, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 15;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 15;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 0xFFFFFFFF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->ltu, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 0xFFFFFFFF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->ltu, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0xFFFFFFFF;
     mod->read_rs2_val = 0x80ABCDEF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 27;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 1);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 0x80ABCDEF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 1);
 
     // SLTIU
     mod->decode_opcode = 0b0010011;
@@ -249,15 +264,19 @@ TEST_F(ExecuteAluTest, Sltu) {
     mod->decode_imm = 12;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->ltu, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 0xFFFFFFFF;
     mod->decode_imm = 0xFFFFFFAB;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->ltu, 1);
+    ASSERT_EQ(mod->eq, 0);
 }
 
-TEST_F(ExecuteAluTest, Slt) {
+TEST_F(AluTesterTest, Slt) {
     eval();
 
     mod->decode_opcode = 0b0110011;
@@ -270,41 +289,57 @@ TEST_F(ExecuteAluTest, Slt) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->lt, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 15;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 15;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->lt, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 0xFFFFFFFF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 0xFFFFFFFF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->lt, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0xFFFFFFFF;
     mod->read_rs2_val = 0x80ABCDEF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 27;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 1);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 0x80ABCDEF;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 1);
 
     // SLTI
     mod->decode_opcode = 0b0010011;
@@ -315,27 +350,35 @@ TEST_F(ExecuteAluTest, Slt) {
     mod->decode_imm = 12;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 27;
     mod->read_rs2_val = 30;
     mod->decode_imm = 0xFFFFFFAB;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0x80ABCDEF;
     mod->read_rs2_val = 30;
     mod->decode_imm = 0xFFFFFFAB;
     eval();
     ASSERT_EQ(mod->rd_val_out, 1);
+    ASSERT_EQ(mod->lt, 1);
+    ASSERT_EQ(mod->eq, 0);
 
     mod->read_rs1_val = 0xFFFFFAB;
     mod->read_rs2_val = 30;
     mod->decode_imm = 0xFFFFF8AB;
     eval();
     ASSERT_EQ(mod->rd_val_out, 0);
+    ASSERT_EQ(mod->lt, 0);
+    ASSERT_EQ(mod->eq, 0);
 }
 
-TEST_F(ExecuteAluTest, Lui) {
+TEST_F(AluTesterTest, Lui) {
     eval();
 
     mod->decode_opcode = 0b0110111;
@@ -347,7 +390,7 @@ TEST_F(ExecuteAluTest, Lui) {
     ASSERT_EQ(mod->rd_val_out, 0xABCDF000);
 }
 
-TEST_F(ExecuteAluTest, Auipc) {
+TEST_F(AluTesterTest, Auipc) {
     eval();
 
     mod->decode_opcode = 0b0010111;
