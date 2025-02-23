@@ -145,6 +145,14 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
 
+add_verilator_library(
+    TOP branch_tester
+    TOP_DIR src/test
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/branch_tester.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_branch.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+)
+
 
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)
