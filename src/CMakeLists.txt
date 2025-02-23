@@ -137,6 +137,14 @@ add_verilator_library(
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
 )
 
+add_verilator_library(
+    TOP jump_tester
+    TOP_DIR src/test
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/jump_tester.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_jump.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+)
+
 
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)

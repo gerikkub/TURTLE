@@ -19,9 +19,6 @@ module execute_shift(
     output [31:0]rd_val_out
     );
 
-    // OP-IMM
-    wire op_imm = decode_opcode == 'b0010011;
-
     localparam OP_IMM_OPCODE = 'b0010011;
     localparam OP_OPCODE = 'b0110011;
 
@@ -105,7 +102,7 @@ module execute_shift(
     assign rd_val_out = (read_valid && shift_buffer_valid) ? 'h004c0de0 :
                         shift_buffer_mux;
 
-    wire [4:0]shamt_in = op_imm ? decode_imm[4:0] :
+    wire [4:0]shamt_in = (decode_opcode == OP_IMM_OPCODE) ? decode_imm[4:0] :
                                   read_rs2_val[4:0];
     wire [1:0]shamt_next = read_valid ? shamt_in[4:3] :
                            shamt_buffer == 'b11 ? 'b10 :

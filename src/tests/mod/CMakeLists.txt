@@ -63,4 +63,9 @@ add_module_test(TOP execute_shift
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute_shift.cpp
 )
 
+add_module_test(TOP jump_tester
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/jump_tester.cpp
+)
+
+
 
