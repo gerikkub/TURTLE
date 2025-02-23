@@ -59,4 +59,8 @@ add_module_test(TOP execute_alu
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute_alu.cpp
 )
 
+add_module_test(TOP execute_shift
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute_shift.cpp
+)
+
 

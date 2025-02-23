@@ -129,6 +129,12 @@ add_verilator_library(
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_alu.sv"
 )
 
+add_verilator_library(
+    TOP execute_shift
+    TOP_DIR src/execute
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
+)
+
 
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)

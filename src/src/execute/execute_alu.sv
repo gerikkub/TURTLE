@@ -1,10 +1,6 @@
 `timescale 1ns / 1ns
 
 module execute_alu(
-    //input clk,
-    //input reset,
-    //input flush,
-
     input var [6:0]decode_opcode,
     input var [2:0]decode_funct3,
     input var [6:0]decode_funct7,
@@ -19,8 +15,6 @@ module execute_alu(
     output valid,
     output [31:0]rd_val_out
     );
-
-    // Handle OP and OP-IMM opcodes in a single cycle
 
     localparam OP_IMM_OPCODE = 'b0010011;
     localparam OP_OPCODE = 'b0110011;
