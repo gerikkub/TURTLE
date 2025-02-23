@@ -335,6 +335,38 @@ TEST_F(ExecuteAluTest, Slt) {
     ASSERT_EQ(mod->rd_val_out, 0);
 }
 
+TEST_F(ExecuteAluTest, Lui) {
+    eval();
+
+    mod->decode_opcode = 0b0110111;
+    mod->decode_imm = 0xABCDF000;
+    mod->read_valid = 1;
+    eval();
+    ASSERT_EQ(mod->processing, 1);
+    ASSERT_EQ(mod->valid, 1);
+    ASSERT_EQ(mod->rd_val_out, 0xABCDF000);
+}
+
+TEST_F(ExecuteAluTest, Auipc) {
+    eval();
+
+    mod->decode_opcode = 0b0010111;
+    mod->decode_imm = 0xABCDF000;
+    mod->decode_pc = 0x00000123;
+    mod->read_valid = 1;
+    eval();
+    ASSERT_EQ(mod->processing, 1);
+    ASSERT_EQ(mod->valid, 1);
+    ASSERT_EQ(mod->rd_val_out, 0xABCDF123);
+
+    mod->decode_imm = 0xABCDF000;
+    mod->decode_pc = 0x00002123;
+    mod->read_valid = 1;
+    eval();
+    ASSERT_EQ(mod->rd_val_out, 0xABCE1123);
+}
+
+
 int main(int argc, char** argv) {
 
     int res;

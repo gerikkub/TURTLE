@@ -9,6 +9,7 @@ module execute_alu(
     input var [2:0]decode_funct3,
     input var [6:0]decode_funct7,
     input var [31:0]decode_imm,
+    input var [31:0]decode_pc,
 
     input var [31:0]read_rs1_val,
     input var [31:0]read_rs2_val,
@@ -21,11 +22,10 @@ module execute_alu(
 
     // Handle OP and OP-IMM opcodes in a single cycle
 
-    // OP-IMM
-    wire op_imm = decode_opcode == 'b0010011;
-
     localparam OP_IMM_OPCODE = 'b0010011;
     localparam OP_OPCODE = 'b0110011;
+    localparam LUI_OPCODE = 'b0110111;
+    localparam AUIPC_OPCODE = 'b0010111;
 
     enum int unsigned {
         ADD,
@@ -35,6 +35,8 @@ module execute_alu(
         XOR,
         OR,
         AND,
+        LUI,
+        AUIPC,
         UNKNOWN
     } op;
 
@@ -63,14 +65,22 @@ module execute_alu(
                 'b0000000111: op = AND;
                 default: op = UNKNOWN;
             endcase
-        end else
+        end else if (decode_opcode == AUIPC_OPCODE)
+            op = AUIPC;
+        else if (decode_opcode == LUI_OPCODE)
+            op = LUI;
+        else
             op = UNKNOWN;
     end
 
 
     // Calculate adder inputs. Add an extra bit for SLTU op
-    wire [32:0] in_a = {1'b0, read_rs1_val};
-    wire [32:0] in_b_pre = op_imm ? {1'b0, decode_imm} : {1'b0, read_rs2_val};
+    wire [32:0] in_a = op == AUIPC ? {1'b0, decode_pc} :
+                                     {1'b0, read_rs1_val};
+
+    wire [32:0] in_b_pre = (decode_opcode == OP_IMM_OPCODE ||
+                            op == AUIPC) ? {1'b0, decode_imm} :
+                                                  {1'b0, read_rs2_val};
     wire [32:0] in_b = (op == SUB || op == SLT || op == SLTU) ?
                             ((~in_b_pre) + 'd1) :
                             in_b_pre;
@@ -98,22 +108,13 @@ module execute_alu(
             XOR: rd_val_out = alu_xor;
             OR: rd_val_out = alu_or;
             AND: rd_val_out = alu_and;
+            LUI: rd_val_out = decode_imm;
+            AUIPC: rd_val_out = adder_out[31:0];
             UNKNOWN: rd_val_out = 'h003c0de;
         endcase
     end
 
-    // Mark when execution is completed
-    always_comb begin
-        case(op)
-            ADD: valid = should_handle;
-            SUB: valid = should_handle;
-            SLT: valid = should_handle;
-            SLTU: valid = should_handle;
-            XOR: valid = should_handle;
-            OR: valid = should_handle;
-            AND: valid = should_handle;
-            UNKNOWN: valid = 'd0;
-        endcase
-    end
+    assign valid = (op == UNKNOWN) ? 'd0 :
+                                     should_handle;
 
 endmodule
