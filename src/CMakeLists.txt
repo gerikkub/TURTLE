@@ -124,15 +124,11 @@ add_verilator_library(
 )
 
 add_verilator_library(
-    TOP execute_alu
-    TOP_DIR src/execute
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_alu.sv"
-)
-
-add_verilator_library(
     TOP alu_tester
     TOP_DIR src/test
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/alu_tester.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_alu.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
 
 add_verilator_library(
