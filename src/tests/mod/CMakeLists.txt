@@ -55,4 +55,8 @@ add_module_test(TOP reg_file
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/reg_file.cpp
 )
 
+add_module_test(TOP execute_alu
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute_alu.cpp
+)
+
 

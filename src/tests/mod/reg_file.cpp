@@ -106,8 +106,6 @@ TEST_F(RegFileTest, ReadWriteZero) {
     eval();
     ASSERT_EQ(mod->rs1_val, 0);
     ASSERT_EQ(mod->rs2_val, 0);
-
-
 }
 
 int main(int argc, char** argv) {
