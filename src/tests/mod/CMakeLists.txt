@@ -71,5 +71,9 @@ add_module_test(TOP branch_tester
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/branch_tester.cpp
 )
 
+add_module_test(TOP store_tester
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/store_tester.cpp
+)
+
 
 
