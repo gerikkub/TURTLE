@@ -10,7 +10,7 @@ macro(add_verilator_library)
 
 
     set(oneValueArgs TOP TOP_DIR)
-    set(multiValueArgs DEPENDS)
+    set(multiValueArgs DEPENDS EXTRA_ARGS)
     cmake_parse_arguments(arg
         "" "${oneValueArgs}" "${multiValueArgs}"
         ${ARGV})
@@ -18,9 +18,10 @@ macro(add_verilator_library)
     cmake_print_variables(arg_TOP)
     cmake_print_variables(arg_TOP_DIR)
     cmake_print_variables(arg_DEPENDS)
+    cmake_print_variables(arg_EXTRA_ARGS)
 
     set(TOP_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR}/V${arg_TOP})
-    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread -fdiagnostics-color=always" -LDFLAGS -lpthread -Isrc)
+    set(VERILATOR_FLAGS --trace -CFLAGS "-g -std=c++14 -pthread -fdiagnostics-color=always" -LDFLAGS -lpthread -Isrc ${arg_EXTRA_ARGS})
 
     message("Out header: ${TOP_OBJ_DIR}/V${arg_TOP}.h")
 
@@ -157,6 +158,15 @@ add_verilator_library(
     TOP store_tester
     TOP_DIR src/test
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/store_tester.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+)
+
+add_verilator_library(
+    TOP hold
+    TOP_DIR src/pipeline
+    EXTRA_ARGS -GWIDTH=8
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/hold.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
