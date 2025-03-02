@@ -181,6 +181,11 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
 )
 
+add_verilator_library(
+    TOP commit
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/commit.sv"
+)
 
 add_subdirectory(vcore_sim)
 add_subdirectory(tests/mod)
