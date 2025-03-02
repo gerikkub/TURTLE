@@ -1,17 +1,10 @@
 #include "mod_test.hpp"
 #include "Vstore_tester.h"
 
-typedef ClockedModTest<Vstore_tester> StoreTesterTest;
-
-TEST_F(StoreTesterTest, Reset) {
-    reset();
-
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-}
+typedef ModTest<Vstore_tester> StoreTesterTest;
 
 TEST_F(StoreTesterTest, Invalid) {
-    reset();
+    eval();
 
     mod->decode_opcode = 0b0110011;
     mod->decode_funct3 = 0b0;
@@ -25,7 +18,7 @@ TEST_F(StoreTesterTest, Invalid) {
 
 TEST_F(StoreTesterTest, Store) {
 
-    reset();
+    eval();
 
     mod->decode_opcode = 0b0100011;
     mod->decode_funct3 = 0b010; // SW
@@ -33,7 +26,6 @@ TEST_F(StoreTesterTest, Store) {
     mod->read_rs2_val = 27; // Store value
     mod->decode_imm = 0x84; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 0;
     eval();
 
     ASSERT_EQ(mod->processing, 1);
@@ -45,14 +37,11 @@ TEST_F(StoreTesterTest, Store) {
     ASSERT_EQ(mod->store_size, 2);
     ASSERT_EQ(mod->store_valid, 1);
 
-    clk();
     mod->read_valid = 0;
     eval();
 
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-
-    clk();
 
     mod->decode_opcode = 0b0100011;
     mod->decode_funct3 = 0b010; // SW
@@ -60,25 +49,6 @@ TEST_F(StoreTesterTest, Store) {
     mod->read_rs2_val = 39; // Store value
     mod->decode_imm = 0x14; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 1;
-    clk();
-    mod->read_valid = 0;
-    eval();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->exception_valid_out, 0);
-
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->exception_valid_out, 0);
-
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->exception_valid_out, 0);
-
-    mod->storefifo_full = 0;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
@@ -89,11 +59,6 @@ TEST_F(StoreTesterTest, Store) {
     ASSERT_EQ(mod->store_size, 2);
     ASSERT_EQ(mod->store_valid, 1);
 
-    clk();
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-
-
     // Store Half
     mod->decode_opcode = 0b0100011;
     mod->decode_funct3 = 0b001; // SH
@@ -101,8 +66,7 @@ TEST_F(StoreTesterTest, Store) {
     mod->read_rs2_val = 27; // Store value
     mod->decode_imm = 0x82; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 0;
-    clk();
+    eval();
 
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
@@ -120,8 +84,7 @@ TEST_F(StoreTesterTest, Store) {
     mod->read_rs2_val = 27; // Store value
     mod->decode_imm = 0x87; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 0;
-    clk();
+    eval();
 
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
@@ -134,7 +97,7 @@ TEST_F(StoreTesterTest, Store) {
 }
 
 TEST_F(StoreTesterTest, Exception) {
-    reset();
+    eval();
 
     mod->decode_opcode = 0b0100011;
     mod->decode_funct3 = 0b010; // SW
@@ -142,15 +105,12 @@ TEST_F(StoreTesterTest, Exception) {
     mod->read_rs2_val = 27; // Store value
     mod->decode_imm = 0x83; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 0;
     eval();
 
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->exception_valid_out, 1);
     ASSERT_EQ(mod->exception_num_out, 6);
-
-    clk();
 
     mod->decode_opcode = 0b0100011;
     mod->decode_funct3 = 0b001; // SH
@@ -158,46 +118,12 @@ TEST_F(StoreTesterTest, Exception) {
     mod->read_rs2_val = 27; // Store value
     mod->decode_imm = 0x83; // Address Base
     mod->read_valid = 1;
-    mod->storefifo_full = 0;
     eval();
 
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->exception_valid_out, 1);
     ASSERT_EQ(mod->exception_num_out, 6);
-}
-
-TEST_F(StoreTesterTest, Flush) {
-    reset();
-
-    mod->decode_opcode = 0b0100011;
-    mod->decode_funct3 = 0b010; // SW
-    mod->read_rs1_val = 0x80004000; // Address Base
-    mod->read_rs2_val = 27; // Store value
-    mod->decode_imm = 0x83; // Address Base
-    mod->read_valid = 1;
-    mod->storefifo_full = 1;
-    clk();
-    mod->read_valid = 0;
-    eval();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    mod->flush = 1;
-    eval();
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-    clk();
-    mod->flush = 0;
-
-    eval();
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-
 }
 
 int main(int argc, char** argv) {

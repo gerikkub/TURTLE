@@ -19,7 +19,7 @@ module execute_jump(
     output valid,
     output [31:0]rd_val_out,
     output [31:0]pc_out,
-    output jump_pc,
+    output jump_pc_out,
     output [5:0]exception_num_out,
     output exception_valid_out
     );
@@ -36,7 +36,7 @@ module execute_jump(
     assign exception_num_out = EXCEPTION_ADDR_MISALIGN;
     assign exception_valid_out = pc_out[1:0] != 'd0;
 
-    assign jump_pc = read_valid && !exception_valid_out;
+    assign jump_pc_out = read_valid && !exception_valid_out;
 
     always_comb begin
         in_a = {1'b0, 32'h005c0de0};

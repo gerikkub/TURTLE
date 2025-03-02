@@ -4,10 +4,6 @@
 `include "execute/alu.sv"
 
 module store_tester(
-    input clk,
-    input reset,
-    input flush,
-
     input var [6:0]decode_opcode,
     input var [2:0]decode_funct3,
     input var [31:0]decode_imm,
@@ -21,8 +17,6 @@ module store_tester(
     output [31:0]store_val,
     output [1:0]store_size,
     output store_valid,
-
-    input storefifo_full,
 
     output processing,
     output valid,
@@ -42,9 +36,6 @@ module store_tester(
     wire [31:0] alu_out;
 
     execute_store es0(
-        .clk(clk),
-        .reset(reset),
-        .flush(flush),
         .decode_opcode(decode_opcode),
         .decode_funct3(decode_funct3),
         .decode_imm(decode_imm),
@@ -56,7 +47,6 @@ module store_tester(
         .alu_op(alu_op_store),
         .alu_valid(alu_valid_store),
         .alu_result(alu_out),
-        .storefifo_full(storefifo_full),
         .store_addr(store_addr),
         .store_val(store_val),
         .store_size(store_size),

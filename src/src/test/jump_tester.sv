@@ -50,7 +50,7 @@ module jump_tester(
         .valid(valid),
         .rd_val_out(rd_val_out),
         .pc_out(pc_out),
-        .jump_pc(jump_pc),
+        .jump_pc_out(jump_pc),
         .exception_num_out(exception_num_out),
         .exception_valid_out(exception_valid_out));
 
