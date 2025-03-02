@@ -5,6 +5,7 @@ module hold #(
     ) (
     input clk,
     input reset,
+    input flush,
 
     input var [WIDTH-1:0] data_in,
     output [WIDTH-1:0] data_out,
@@ -23,7 +24,7 @@ module hold #(
     assign data_out = passthrough ? data_in :
                                     data_reg;
 
-    assign valid_out = !stall && !reset &&
+    assign valid_out = !stall && !reset && !flush &&
                        (data_valid || input_valid);
 
     wire [WIDTH-1:0]data_mux = data_valid ? data_reg :

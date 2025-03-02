@@ -179,12 +179,33 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_jump.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
 
 add_verilator_library(
     TOP commit
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/commit.sv"
+)
+
+add_verilator_library(
+    TOP pipeline
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/pipeline.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/commit.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/execute.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/hold.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_alu.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_branch.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_jump.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/reg_file.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/read_registers.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode_inst.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/instruction_fetch.sv"
 )
 
 add_subdirectory(vcore_sim)

@@ -87,5 +87,9 @@ add_module_test(TOP commit
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/commit.cpp
 )
 
+add_module_test(TOP pipeline
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/pipeline.cpp
+)
+
 
 

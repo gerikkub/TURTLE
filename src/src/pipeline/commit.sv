@@ -1,6 +1,6 @@
 `timescale 1ns / 1ns
 
-module execute(
+module commit(
     input clk,
     input reset,
 
@@ -100,8 +100,8 @@ module execute(
                 store_addr_in <= execute_store_addr;
                 store_val_in <= execute_store_val;
                 store_size_in <= execute_store_size;
-                store_valid_in <= execute_valid;
-            end else begin
+                store_valid_in <= execute_store_valid;
+            end else if (in_valid_mux == 1) begin
                 rd_in <= rd_in;
                 rd_val_in <= rd_val_in;
                 inst_pc_in <= inst_pc_in;
@@ -114,16 +114,28 @@ module execute(
                 store_val_in <= store_val_in;
                 store_size_in <= store_size_in;
                 store_valid_in <= store_valid_in;
+            end else begin
+                rd_in <= 'd0;
+                rd_val_in <= 'd0;
+                inst_pc_in <= 'd0;
+                jump_pc_in <= 'd0;
+                jump_valid_in <= 'd0;
+                exception_num_in <= 'd0;
+                exception_val_in <= 'd0;
+                exception_valid_in <= 'd0;
+                store_addr_in <= 'd0;
+                store_val_in <= 'd0;
+                store_size_in <= 'd0;
+                store_valid_in <= 'd0;
             end
         end
     end
 
-    enum int {
-        NODATA,
-        COMMIT,
-        EXCEPTION,
-        WAIT_FIFO
-    } commit;
+    localparam NODATA = 0;
+    localparam COMMIT = 1;
+    localparam EXCEPTION = 2;
+    localparam WAIT_FIFO = 3;
+    var int commit;
 
     assign commit = (!in_valid) ? NODATA :
                     (exception_valid_in) ? EXCEPTION :
@@ -147,7 +159,7 @@ module execute(
 
     assign commit_valid = (commit == EXCEPTION) || (commit == COMMIT);
     assign pipeline_flush = (commit == EXCEPTION) ||
-                            ((commit == COMMIT) && execute_jump_valid);
+                            ((commit == COMMIT) && jump_valid_in);
     assign pipeline_pc = jump_pc_in;
 
 

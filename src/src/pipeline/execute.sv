@@ -31,6 +31,7 @@ module execute(
 
     output valid,
     output processing,
+    output [4:0]processing_rd,
     input stall, 
     output [4:0]rd_out,
     output [31:0]rd_val_out,
@@ -62,9 +63,9 @@ module execute(
     reg first_cycle;
 
     wire in_valid_mux = !flush &&
-                        read_valid ||
-                        (in_valid &&
-                         !valid);
+                        (read_valid ||
+                         (in_valid &&
+                          !valid));
 
     wire ex_valid = ex_alu_valid ||
                     ex_branch_valid ||
@@ -76,6 +77,8 @@ module execute(
                         ex_jump_processing ||
                         ex_shift_processing ||
                         ex_store_processing;
+
+    assign processing_rd = processing ? rd_in : 'd0;
 
     var [4:0] ex_list = {ex_alu_processing,
                          ex_branch_processing,
@@ -127,7 +130,7 @@ module execute(
                 exception_valid_in <= read_exception_valid;
 
                 first_cycle <= 'd1;
-            end else begin
+            end else if (in_valid_mux == 'd1) begin
                 opcode_in <= opcode_in;
                 rd_in <= rd_in;
                 rs2_in <= rs2_in;
@@ -141,6 +144,22 @@ module execute(
 
                 exception_num_in <= exception_num_in;
                 exception_valid_in <= exception_valid_in;
+
+                first_cycle <= 'd0;
+            end else begin
+                opcode_in <= 'd0;
+                rd_in <= 'd0;
+                rs2_in <= 'd0;
+                funct3_in <= 'd0;
+                funct7_in <= 'd0;
+                imm_in <= 'd0;
+                pc_in <= 'd0;
+
+                rs1_val_in <= 'd0;
+                rs2_val_in <= 'd0;
+
+                exception_num_in <= 'd0;
+                exception_valid_in <= 'd0;
 
                 first_cycle <= 'd0;
             end
@@ -202,6 +221,7 @@ module execute(
     hold #(208) h0(
         .clk(clk),
         .reset(reset),
+        .flush(flush),
         .data_in(hold_in),
         .data_out(hold_out),
         .input_valid(ex_valid),
