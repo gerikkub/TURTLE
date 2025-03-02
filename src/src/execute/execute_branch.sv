@@ -26,7 +26,7 @@ module execute_branch(
     output processing,
     output valid,
     output [31:0]pc_out,
-    output jump_pc,
+    output jump_pc_out,
     output [5:0]exception_num_out,
     output exception_valid_out
     );
@@ -54,7 +54,8 @@ module execute_branch(
     } state, next_state;
 
     assign exception_num_out = EXCEPTION_ADDR_MISALIGN;
-    assign exception_valid_out = pc_out[1:0] != 'd0;
+    assign exception_valid_out = (state == TAKE_BRANCH) &&
+                                 (pc_out[1:0] != 'd0);
 
     wire known_opcode = (decode_opcode == BRANCH_OPCODE) &&
                         ((decode_funct3 == COND_BEQ) ||
@@ -114,19 +115,19 @@ module execute_branch(
         if (!processing || flush) begin
             in_a = 'h009c0de;
             in_b = 'h00ac0de;
-            jump_pc = 'd0;
+            jump_pc_out = 'd0;
             pc_out = 'h00bc0de;
             valid = 'd0;
         end else if (state == CHECK_CONDITION) begin
             in_a = {1'b0, read_rs1_val};
             in_b = {1'b0, read_rs2_val};
             if (should_take) begin
-                jump_pc = 'd0;
+                jump_pc_out = 'd0;
                 // PC will be calculated on next cycle
                 pc_out = 'h00cc0de;
                 valid = 'd0;
             end else begin
-                jump_pc = 'd0;
+                jump_pc_out = 'd0;
                 pc_out = 'h00dc0de;
                 // End the cycle here
                 valid = 'd1;
@@ -136,7 +137,7 @@ module execute_branch(
             in_b = {1'b0, decode_imm};
 
             // Only jump if there isn't an exception
-            jump_pc = ~exception_valid_out;
+            jump_pc_out = ~exception_valid_out;
             pc_out = alu_result;
             valid = 'd1;
         end

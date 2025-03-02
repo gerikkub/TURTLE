@@ -68,6 +68,7 @@ TEST_F(BranchTesterTest, NotTaken) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
     ASSERT_EQ(mod->jump_pc, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
 
     clk();
 

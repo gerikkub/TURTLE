@@ -63,7 +63,7 @@ module branch_tester(
         .processing(processing),
         .valid(valid),
         .pc_out(pc_out),
-        .jump_pc(jump_pc),
+        .jump_pc_out(jump_pc),
         .exception_num_out(exception_num_out),
         .exception_valid_out(exception_valid_out));
 

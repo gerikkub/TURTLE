@@ -167,8 +167,18 @@ add_verilator_library(
     TOP_DIR src/pipeline
     EXTRA_ARGS -GWIDTH=8
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/hold.sv"
+)
+
+add_verilator_library(
+    TOP execute
+    TOP_DIR src/pipeline
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/execute.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/hold.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_alu.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_branch.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_jump.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
 
 

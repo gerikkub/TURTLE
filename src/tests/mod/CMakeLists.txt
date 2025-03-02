@@ -75,5 +75,13 @@ add_module_test(TOP store_tester
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/store_tester.cpp
 )
 
+add_module_test(TOP hold
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/hold.cpp
+)
+
+add_module_test(TOP execute
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute.cpp
+)
+
 
 
