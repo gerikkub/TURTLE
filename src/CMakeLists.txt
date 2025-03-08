@@ -163,6 +163,14 @@ add_verilator_library(
 )
 
 add_verilator_library(
+    TOP load_tester
+    TOP_DIR src/test
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/test/load_tester.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_load.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+)
+
+add_verilator_library(
     TOP hold
     TOP_DIR src/pipeline
     EXTRA_ARGS -GWIDTH=8

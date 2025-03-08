@@ -13,6 +13,7 @@ function(add_module_test)
     )
 
     add_executable(${arg_TOP}_test
+        mod_test
         ${arg_SRC}
     )
 
@@ -34,6 +35,16 @@ function(add_module_test)
     add_test(NAME ${arg_TOP}_test COMMAND ${arg_TOP}_test)
 
 endfunction()
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(VERILATOR REQUIRED verilator)
+
+add_library(mod_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/mod_test.cpp
+)
+target_include_directories(mod_test PUBLIC SYSTEM
+    ${VERILATOR_INCLUDE_DIRS}
+)
 
 add_module_test(TOP instruction_fetch
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/instruction_fetch_test.cpp
@@ -73,6 +84,10 @@ add_module_test(TOP branch_tester
 
 add_module_test(TOP store_tester
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/store_tester.cpp
+)
+
+add_module_test(TOP load_tester
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/load_tester.cpp
 )
 
 add_module_test(TOP hold

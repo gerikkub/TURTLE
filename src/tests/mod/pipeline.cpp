@@ -7,21 +7,6 @@
 class PipelineTest : public ClockedModTest<Vpipeline> {
 
     public:
-    struct MemoryMap {
-        uint32_t addr;
-        uint32_t size;
-        uint8_t* data;
-    };
-
-    void set_memory_map(const std::vector<MemoryMap>& mappings) {
-        m_mappings = mappings;
-    }
-
-    void set_memory_map(const MemoryMap& map) {
-        auto mappings = std::vector<MemoryMap>();
-        mappings.push_back(map);
-        set_memory_map(mappings);
-    }
 
     void simulate(int clks) {
 
@@ -33,11 +18,6 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
                 int ok;
                 uint32_t inst = 0;
                 ok = read_memory(mod->mem_fetch_addr, inst);
-                if (ok != 0) {
-                    std::printf("Instruction Fetch Fault at addr: %8x (%d)\n",
-                                mod->mem_fetch_addr,
-                                cycle_count);
-                }
                 mod->mem_inst_in = inst;
                 mod->mem_inst_valid = 1;
                 mod->mem_inst_access_fault = ok != 0;
@@ -49,8 +29,6 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
                     mod->datafifo_val_out == 0x11223000 &&
                     mod->datafifo_size_out == 2) {
 
-                    std::printf("Complete Nominal (%d)\n",
-                                cycle_count);
                     return;
                 }
 
@@ -89,6 +67,8 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
             clk();
             cycle_count++;
         }
+
+        ASSERT_TRUE(false);
     }
 
     private:
@@ -127,9 +107,6 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
         return 0;
     }
 
-    private:
-    std::vector<MemoryMap> m_mappings;
-
 };
 
 TEST_F(PipelineTest, Reset) {
@@ -144,40 +121,107 @@ TEST_F(PipelineTest, Reset) {
 TEST_F(PipelineTest, Count) {
     reset();
 
-    uint32_t inst_mem[] = {
-//00000000 <_start>:
-        0x000000b7, // lui	ra,0x0
-        0x06400113, // li	sp,100
-        0x00100193, // li	gp,1
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x1, 0 \n\
+        addi x2, x0, 100 \n\
+        addi x3, x0, 1 \n\
+        loop: \n\
+        beq x1, x2, done \n\
+        add x1, x1, x3 \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
 
-//0000000c <loop>:
-        0x00208663,  // beq	ra,sp,18 <done>
-        0x003080b3,  // add	ra,ra,gp
-        0xff9ff06f,  // j	c <loop>
-
-//00000018 <done>:
-        0xabcde237,  // lui	tp,0xabcde
-        0x112232b7,  // lui	t0,0x11223
-        0x00522023   // sw	t0,0(tp) # abcde000 <done+0xabcddfe8>
-    };
-
-    MemoryMap inst_mapping{
-        .addr = 0, 
-        .size = sizeof(inst_mem),
-        .data = reinterpret_cast<uint8_t*>(inst_mem)
-    };
-    set_memory_map(inst_mapping);
-
-    simulate(10000);
+    simulate(1000);
 }
 
-int main(int argc, char** argv) {
+TEST_F(PipelineTest, Call) {
+    reset();
 
-    int res;
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x1, 0 \n\
+        addi x2, x0, 20 \n\
+        addi x3, x0, 1 \n\
+        jal x0, loop \n\
+        fn: \n\
+        add x1, x1, x3 \n\
+        jalr x0,x10 \n\
+        loop: \n\
+        beq x1, x2, done \n\
+        jal x10, fn \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
 
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
+    simulate(1000);
 }
+
+TEST_F(PipelineTest, Shift) {
+    reset();
+
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x1, 0xFA987 \n\
+        sra x1, x1, 20 \n\
+        addi x2, x0, -87 \n\
+        beq x1, x2, done \n\
+        loop: \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+
+TEST_F(PipelineTest, HazardRaW) {
+    reset();
+
+    // Read after write hazards for "addi", "add" and "beq" instructions
+    memory_map_from_asm(" \
+        _start: \n\
+        addi x2, x0, 4 \n\
+        addi x1, x0, 1 \n\
+        addi x3, x1, 1 \n\
+        add x3, x3, x1 \n\
+        add x3, x1, x3 \n\
+        beq x3, x2, done \n\
+        loop: \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+
+TEST_F(PipelineTest, HazardWaW) {
+    reset();
+
+    // Write after Write for "add" instruction
+    memory_map_from_asm(" \
+        _start: \n\
+        addi x2, x0, 8 \n\
+        addi x1, x0, 1 \n\
+        add x1, x1, x1 \n\
+        add x1, x1, x1 \n\
+        add x1, x1, x1 \n\
+        beq x2, x1, done \n\
+        loop: \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+

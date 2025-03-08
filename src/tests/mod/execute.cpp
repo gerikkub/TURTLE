@@ -449,13 +449,3 @@ TEST_F(ExecuteTest, Hold) {
 }
 
 
-int main(int argc, char** argv) {
-
-    int res;
-
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-}

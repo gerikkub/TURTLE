@@ -130,15 +130,4 @@ TEST_F(JumpTesterTest, Jalr) {
     ASSERT_EQ(mod->exception_valid_out, 1);
 }
 
-int main(int argc, char** argv) {
-
-    int res;
-
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-}
-
 

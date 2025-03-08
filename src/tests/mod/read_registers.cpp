@@ -275,14 +275,3 @@ TEST_F(ReadRegistersTest, Flush) {
     ASSERT_EQ(mod->valid, 0);
 }
 
-
-int main(int argc, char** argv) {
-
-    int res;
-
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-}

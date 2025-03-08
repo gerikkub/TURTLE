@@ -293,14 +293,3 @@ TEST_F(DecodeTest, Exception) {
     ASSERT_EQ(mod->exception_valid_out, 1);
     ASSERT_EQ(mod->exception_num_out, 1);
 }
-
-int main(int argc, char** argv) {
-
-    int res;
-
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-}

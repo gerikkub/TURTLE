@@ -409,15 +409,3 @@ TEST_F(AluTesterTest, Auipc) {
     ASSERT_EQ(mod->rd_val_out, 0xABCE1123);
 }
 
-
-int main(int argc, char** argv) {
-
-    int res;
-
-    Verilated::commandArgs(argc, argv);
-
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
-}
-

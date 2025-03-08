@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 add_compile_options (-fdiagnostics-color=always)
 
-set(CMAKE_CXX_VERSION 14)
+set(CMAKE_CXX_STANDARD 26)
 enable_testing()
 
 add_subdirectory(src)
