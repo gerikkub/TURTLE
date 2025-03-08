@@ -188,6 +188,8 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_load.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_fence.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_ecall.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
 )
 
@@ -210,6 +212,8 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_shift.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_store.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_load.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_fence.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_ecall.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/reg_file.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/read_registers.sv"

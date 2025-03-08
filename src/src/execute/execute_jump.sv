@@ -26,7 +26,6 @@ module execute_jump(
 
     localparam JALR_OPCODE = 'b1100111;
     localparam JAL_OPCODE = 'b1101111;
-    //localparam BRANCH_OPCODE = 'b1100011;
 
     localparam ALU_ADD = 0;
     localparam ALU_UNKNOWN = 8;

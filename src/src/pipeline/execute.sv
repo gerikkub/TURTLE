@@ -8,6 +8,8 @@
 `include "execute/execute_shift.sv"
 `include "execute/execute_store.sv"
 `include "execute/execute_load.sv"
+`include "execute/execute_fence.sv"
+`include "execute/execute_ecall.sv"
 
 module execute(
     input clk,
@@ -80,25 +82,31 @@ module execute(
                     ex_jump_valid ||
                     ex_shift_valid ||
                     ex_store_valid ||
-                    ex_load_valid;
+                    ex_load_valid ||
+                    ex_fence_valid ||
+                    ex_ecall_valid;
     assign processing = ex_alu_processing ||
                         ex_branch_processing ||
                         ex_jump_processing ||
                         ex_shift_processing ||
                         ex_store_processing ||
-                        ex_load_processing;
+                        ex_load_processing ||
+                        ex_fence_processing ||
+                        ex_ecall_processing;
 
     assign processing_rd = processing ? rd_in : 'd0;
 
-    var [5:0] ex_list = {ex_alu_processing,
+    var [7:0] ex_list = {ex_alu_processing,
                          ex_branch_processing,
                          ex_jump_processing,
                          ex_shift_processing,
                          ex_store_processing,
-                         ex_load_processing};
+                         ex_load_processing,
+                         ex_fence_processing,
+                         ex_ecall_processing};
     always_comb begin
         int count = 0;
-        for (int i = 0; i < 6; i++) begin
+        for (int i = 0; i < 8; i++) begin
             count += {31'b0, ex_list[i]};
         end
         // TODO: Figure out how to make this assert fire when running
@@ -199,6 +207,7 @@ module execute(
                                      ex_jump_processing ? ex_jump_exception_num_result :
                                      ex_store_processing ? ex_store_exception_num_result :
                                      ex_load_processing ? ex_load_exception_num_result :
+                                     ex_ecall_processing ? ex_ecall_exception_num_result :
                                      'd0;
     wire [31:0]exception_val_result = 'd0;
 
@@ -207,6 +216,7 @@ module execute(
                                   ex_jump_processing ? ex_jump_exception_valid_result :
                                   ex_store_processing ? ex_store_exception_valid_result :
                                   ex_load_processing ? ex_load_exception_valid_result :
+                                  ex_ecall_processing ? ex_ecall_exception_valid_result :
                                   'd0;
 
     wire [31:0]store_addr_result = ex_store_processing ? ex_store_addr_result :
@@ -481,6 +491,34 @@ module execute(
         .rd_val(ex_load_rd_val),
         .exception_num_out(ex_load_exception_num_result),
         .exception_valid_out(ex_load_exception_valid_result));
+
+    // FENCE/PAUSE execution unit
+    wire ex_fence_processing;
+    wire ex_fence_valid;
+
+    execute_fence ex_fence0(
+        .decode_opcode(opcode_in),
+        .decode_funct3(funct3_in),
+        .decode_funct7(funct7_in),
+        .read_valid(first_cycle),
+        .processing(ex_fence_processing),
+        .valid(ex_fence_valid));
+
+    // ECALL/EBREAK execution unit
+    wire ex_ecall_processing;
+    wire ex_ecall_valid;
+    wire [5:0]ex_ecall_exception_num_result;
+    wire ex_ecall_exception_valid_result;
+
+    execute_ecall ex_ecall0(
+        .decode_opcode(opcode_in),
+        .decode_funct3(funct3_in),
+        .decode_funct7(funct7_in),
+        .read_valid(first_cycle),
+        .processing(ex_ecall_processing),
+        .valid(ex_ecall_valid),
+        .exception_num_out(ex_ecall_exception_num_result),
+        .exception_valid_out(ex_ecall_exception_valid_result));
 
 endmodule
 

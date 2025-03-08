@@ -247,6 +247,22 @@ TEST_F(PipelineTest, LoadStoreHazard) {
     simulate(100);
 }
 
+TEST_F(PipelineTest, Fence) {
+    reset();
+
+    memory_map_from_asm(" \
+        _start: \n\
+        fence \n\
+        fence \n\
+        fence.tso \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+
 TEST_F(PipelineTest, HazardRaW) {
     reset();
 
