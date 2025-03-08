@@ -448,4 +448,70 @@ TEST_F(ExecuteTest, Hold) {
     ASSERT_EQ(mod->exception_valid_out, 0);
 }
 
+TEST_F(ExecuteTest, Load) {
+    reset();
+
+    // Load Word
+    mod->decode_opcode = 0b0000011;
+    mod->decode_funct3 = 0b010;
+    mod->decode_imm = 0xFFFFFF00;
+    mod->decode_pc = 0xAABBCCDC;
+
+    mod->read_rs1_val = 0x1234FDEC;
+    mod->read_valid = 0;
+    mod->flush = 0;
+    clk();
+    ASSERT_EQ(mod->processing, 0);
+    ASSERT_EQ(mod->valid, 0);
+    ASSERT_EQ(mod->read_stall, 0);
+    ASSERT_EQ(mod->jump_out, 0);
+    ASSERT_EQ(mod->store_valid_out, 0);
+
+    mod->read_valid = 1;
+    clk();
+    mod->read_valid = 0;
+    eval();
+
+    ASSERT_EQ(mod->processing, 1);
+    ASSERT_EQ(mod->valid, 0);
+    ASSERT_EQ(mod->read_stall, 1);
+
+    ASSERT_EQ(mod->jump_out, 0);
+    ASSERT_EQ(mod->store_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->mem_data_addr_valid, 0);
+
+    clk();
+    ASSERT_EQ(mod->processing, 1);
+    ASSERT_EQ(mod->valid, 0);
+    ASSERT_EQ(mod->read_stall, 1);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+    ASSERT_EQ(mod->jump_out, 0);
+    ASSERT_EQ(mod->store_valid_out, 0);
+
+    ASSERT_EQ(mod->mem_data_addr_valid, 1);
+    ASSERT_EQ(mod->mem_data_addr, 0x1234FCEC);
+    ASSERT_EQ(mod->mem_data_size, 2);
+
+    mod->mem_data_in = 0x8899ABCD;
+    mod->mem_data_valid = 1;
+    eval();
+    ASSERT_EQ(mod->processing, 1);
+    ASSERT_EQ(mod->valid, 1);
+    ASSERT_EQ(mod->read_stall, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+    ASSERT_EQ(mod->jump_out, 0);
+    ASSERT_EQ(mod->store_valid_out, 0);
+
+    ASSERT_EQ(mod->rd_val_out, 0x8899ABCD);
+    clk();
+    ASSERT_EQ(mod->processing, 0);
+    ASSERT_EQ(mod->valid, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+    ASSERT_EQ(mod->mem_data_addr_valid, 0);
+    ASSERT_EQ(mod->jump_out, 0);
+    ASSERT_EQ(mod->store_valid_out, 0);
+}
+
 

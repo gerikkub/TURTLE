@@ -19,12 +19,21 @@ module pipeline(
     input mem_inst_valid,
     input mem_inst_access_fault,
 
-    // Data Bus
+    // Data Bus Write
     input datafifo_full,
     output [31:0]datafifo_addr_out,
     output [31:0]datafifo_val_out,
     output [1:0]datafifo_size_out,
-    output datafifo_valid_out
+    output datafifo_valid_out,
+
+    // Data Bus Read
+    output [31:0]mem_data_addr,
+    output mem_data_addr_valid,
+    output [1:0]mem_data_size,
+    input [31:0] mem_data_in,
+    input mem_data_valid,
+    input mem_data_access_fault
+
     );
 
 
@@ -203,6 +212,12 @@ module pipeline(
         .read_stall(read_registers_stall),
         .read_exception_num(rr_exception_num),
         .read_exception_valid(rr_exception_valid),
+        .mem_data_addr(mem_data_addr),
+        .mem_data_addr_valid(mem_data_addr_valid),
+        .mem_data_size(mem_data_size),
+        .mem_data_in(mem_data_in),
+        .mem_data_valid(mem_data_valid),
+        .mem_data_access_fault(mem_data_access_fault),
         .valid(execute_valid),
         .processing(execute_processing),
         .processing_rd(execute_processing_rd),

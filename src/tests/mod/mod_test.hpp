@@ -57,7 +57,9 @@ class ModTest : public ::testing::Test {
     };
 
     void set_memory_map(const std::vector<MemoryMap>& mappings) {
-        m_mappings = mappings;
+        for (auto m : mappings) {
+            m_mappings.push_back(m);
+        }
     }
 
     void set_memory_map(const MemoryMap& map) {
@@ -79,6 +81,17 @@ class ModTest : public ::testing::Test {
             .addr = addr,
             .size = static_cast<uint32_t>(std::get<1>(data)),
             .data = std::get<0>(data)
+        };
+        set_memory_map(map);
+    }
+
+    void memory_map_from_new(uint32_t addr, uint32_t size) {
+        uint8_t* data = new uint8_t[size];
+        std::memset(data, 0, size);
+        MemoryMap map = {
+            .addr = addr,
+            .size = size,
+            .data = data
         };
         set_memory_map(map);
     }

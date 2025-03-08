@@ -23,6 +23,49 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
                 mod->mem_inst_access_fault = ok != 0;
             }
 
+            if (mod->mem_data_addr_valid) {
+                int ok;
+                uint32_t val;
+                switch (mod->mem_data_size) {
+                case 0:
+                {
+                    uint8_t data8;
+                    ok = read_memory(mod->mem_data_addr, data8);
+                    val = data8;
+                    break;
+                }
+                case 1:
+                {
+                    uint16_t data16;
+                    ok = read_memory(mod->mem_data_addr, data16);
+                    val = data16;
+                    break;
+                }
+                case 2:
+                {
+                    ok = read_memory(mod->mem_data_addr, val);
+                    break;
+                }
+                default:
+                    ASSERT_TRUE(false);
+                    break;
+                }
+
+                if (ok == 0) {
+                    mod->mem_data_in = val;
+                    mod->mem_data_access_fault = 0;
+                    mod->mem_data_valid = 1;
+                } else {
+                    mod->mem_data_in = 0;
+                    mod->mem_data_access_fault = 1;
+                    mod->mem_data_valid = 1;
+                }
+            } else {
+                mod->mem_data_in = 0;
+                mod->mem_data_access_fault = 0;
+                mod->mem_data_valid = 0;
+            }
+
             if (mod->datafifo_valid_out) {
 
                 if (mod->datafifo_addr_out == 0xABCDE000 &&
@@ -171,6 +214,29 @@ TEST_F(PipelineTest, Shift) {
         sra x1, x1, 20 \n\
         addi x2, x0, -87 \n\
         beq x1, x2, done \n\
+        loop: \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+
+TEST_F(PipelineTest, LoadStoreHazard) {
+    reset();
+    memory_map_from_new(0x1000, 128);
+
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x1, 0xFA987 \n\
+        addi x1, x1, 0x654 \n\
+        addi x4, x0, 0xFFFFFF98 \n\
+        lui x2, 1 \n\
+        sw x1, 0(x2) \n\
+        lb x3, 2(x2) \n\
+        beq x4, x3, done \n\
         loop: \n\
         jal x0, loop \n\
         done: \n\

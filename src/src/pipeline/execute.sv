@@ -7,6 +7,7 @@
 `include "execute/execute_jump.sv"
 `include "execute/execute_shift.sv"
 `include "execute/execute_store.sv"
+`include "execute/execute_load.sv"
 
 module execute(
     input clk,
@@ -28,6 +29,13 @@ module execute(
     output read_stall,
     input [5:0]read_exception_num,
     input read_exception_valid,
+
+    output [31:0]mem_data_addr,
+    output mem_data_addr_valid,
+    output [1:0]mem_data_size,
+    input [31:0] mem_data_in,
+    input mem_data_valid,
+    input mem_data_access_fault,
 
     output valid,
     output processing,
@@ -71,23 +79,26 @@ module execute(
                     ex_branch_valid ||
                     ex_jump_valid ||
                     ex_shift_valid ||
-                    ex_store_valid;
+                    ex_store_valid ||
+                    ex_load_valid;
     assign processing = ex_alu_processing ||
                         ex_branch_processing ||
                         ex_jump_processing ||
                         ex_shift_processing ||
-                        ex_store_processing;
+                        ex_store_processing ||
+                        ex_load_processing;
 
     assign processing_rd = processing ? rd_in : 'd0;
 
-    var [4:0] ex_list = {ex_alu_processing,
+    var [5:0] ex_list = {ex_alu_processing,
                          ex_branch_processing,
                          ex_jump_processing,
                          ex_shift_processing,
-                         ex_store_processing};
+                         ex_store_processing,
+                         ex_load_processing};
     always_comb begin
         int count = 0;
-        for (int i = 0; i < 5; i++) begin
+        for (int i = 0; i < 6; i++) begin
             count += {31'b0, ex_list[i]};
         end
         // TODO: Figure out how to make this assert fire when running
@@ -180,12 +191,14 @@ module execute(
     wire [31:0]rd_val_result = ex_alu_processing ? alu_result :
                                ex_jump_processing ? ex_jump_rd_val :
                                ex_shift_processing ? ex_shift_rd_val :
+                               ex_load_processing ? ex_load_rd_val :
                                'h013c0de;
 
     wire [5:0]exception_num_result = ex_alu_processing ? 'd0 :
                                      ex_branch_processing ? ex_branch_exception_num_result :
                                      ex_jump_processing ? ex_jump_exception_num_result :
                                      ex_store_processing ? ex_store_exception_num_result :
+                                     ex_load_processing ? ex_load_exception_num_result :
                                      'd0;
     wire [31:0]exception_val_result = 'd0;
 
@@ -193,6 +206,7 @@ module execute(
                                   ex_branch_processing ? ex_branch_exception_valid_result :
                                   ex_jump_processing ? ex_jump_exception_valid_result :
                                   ex_store_processing ? ex_store_exception_valid_result :
+                                  ex_load_processing ? ex_load_exception_valid_result :
                                   'd0;
 
     wire [31:0]store_addr_result = ex_store_processing ? ex_store_addr_result :
@@ -248,16 +262,19 @@ module execute(
                            ex_branch_alu_valid ? ex_branch_alu_in_a :
                            ex_jump_alu_valid ? ex_jump_alu_in_a :
                            ex_store_alu_valid ? ex_store_alu_in_a :
+                           ex_load_alu_valid ? ex_load_alu_in_a :
                            'h010c0de0;
     wire [32:0] alu_in_b = ex_alu_processing ? ex_alu_alu_in_b :
                            ex_branch_alu_valid ? ex_branch_alu_in_b :
                            ex_jump_alu_valid ? ex_jump_alu_in_b :
                            ex_store_alu_valid ? ex_store_alu_in_b :
+                           ex_load_alu_valid ? ex_load_alu_in_b :
                            'h011c0de0;
     wire [4:0] alu_op = ex_alu_processing ? ex_alu_alu_op :
                         ex_branch_alu_valid ? ex_branch_alu_op :
                         ex_jump_alu_valid ? ex_jump_alu_op :
                         ex_store_alu_valid ? ex_store_alu_op :
+                        ex_load_alu_valid ? ex_load_alu_op :
                         ALU_UNKNOWN;
 
     wire [31:0] alu_result;
@@ -426,6 +443,44 @@ module execute(
         .store_valid(ex_store_valid_result),
         .exception_num_out(ex_store_exception_num_result),
         .exception_valid_out(ex_store_exception_valid_result));
+
+    // Load Execution Unit
+    wire [32:0]ex_load_alu_in_a;
+    wire [32:0]ex_load_alu_in_b;
+    wire [4:0]ex_load_alu_op;
+    wire ex_load_alu_valid;
+
+    wire ex_load_processing;
+    wire ex_load_valid;
+    wire [31:0]ex_load_rd_val;
+    wire [5:0]ex_load_exception_num_result;
+    wire ex_load_exception_valid_result;
+
+    execute_load ex_load0(
+        .clk(clk),
+        .reset(reset),
+        .flush(flush),
+        .decode_opcode(opcode_in),
+        .decode_funct3(funct3_in),
+        .decode_imm(imm_in),
+        .read_rs1_val(rs1_val_in),
+        .read_valid(first_cycle),
+        .in_a(ex_load_alu_in_a),
+        .in_b(ex_load_alu_in_b),
+        .alu_op(ex_load_alu_op),
+        .alu_valid(ex_load_alu_valid),
+        .alu_result(alu_result),
+        .mem_data_addr(mem_data_addr),
+        .mem_data_addr_valid(mem_data_addr_valid),
+        .mem_data_size(mem_data_size),
+        .mem_data_in(mem_data_in),
+        .mem_data_valid(mem_data_valid),
+        .mem_data_access_fault(mem_data_access_fault),
+        .processing(ex_load_processing),
+        .valid(ex_load_valid),
+        .rd_val(ex_load_rd_val),
+        .exception_num_out(ex_load_exception_num_result),
+        .exception_valid_out(ex_load_exception_valid_result));
 
 endmodule
 
