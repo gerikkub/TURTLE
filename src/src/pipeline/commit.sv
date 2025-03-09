@@ -7,21 +7,26 @@ module commit(
     // Execute Inputs
     input execute_valid,
 
-    output [4:0]execute_rd,
-    output [31:0]execute_rd_val,
+    input [4:0]execute_rd,
+    input [31:0]execute_rd_val,
 
-    output [31:0]execute_inst_pc,
-    output [31:0]execute_jump_pc,
-    output execute_jump_valid,
+    input [31:0]execute_inst_pc,
+    input [31:0]execute_jump_pc,
+    input execute_jump_valid,
 
-    output [5:0]execute_exception_num,
-    output [31:0]execute_exception_val,
-    output execute_exception_valid,
+    input [5:0]execute_exception_num,
+    input [31:0]execute_exception_val,
+    input execute_exception_valid,
 
-    output [31:0]execute_store_addr,
-    output [31:0]execute_store_val,
-    output [1:0]execute_store_size,
-    output execute_store_valid,
+    input [31:0]execute_store_addr,
+    input [31:0]execute_store_val,
+    input [1:0]execute_store_size,
+    input execute_store_valid,
+
+    // CSR Write
+    input [11:0]execute_csr_write_addr,
+    input [31:0]execute_csr_write_val,
+    input execute_csr_write_valid,
 
     // Data FIFO
     input datafifo_full,
@@ -45,11 +50,22 @@ module commit(
     output commit_valid,
     output execute_stall,
     output pipeline_flush,
-    output [31:0]pipeline_pc
+    output [31:0]pipeline_pc,
+
+    // Axi-Lite CSR Write
+    output [11:0]axil_csr_awaddr,
+    output axil_csr_awvalid,
+    input axil_csr_awready,
+    output [31:0]axil_csr_wdata,
+    output axil_csr_wvalid,
+    input axil_csr_wready,
+    input [2:0]axil_csr_bresp,
+    input axil_csr_bvalid,
+    output axil_csr_bready
+
 
     // TODO: Exceptions
     // TODO: Interrupts
-    // TODO: CSR Writes
     );
 
     reg [4:0]rd_in;
@@ -64,6 +80,9 @@ module commit(
     reg [31:0]store_val_in;
     reg [1:0]store_size_in;
     reg store_valid_in;
+    reg [11:0]csr_write_addr_in;
+    reg [31:0]csr_write_val_in;
+    reg csr_write_valid_in;
 
     reg in_valid;
 
@@ -85,6 +104,10 @@ module commit(
             store_val_in <= 'd0;
             store_size_in <= 'd0;
             store_valid_in <= 'd0;
+            csr_write_addr_in <= 'd0;
+            csr_write_val_in <= 'd0;
+            csr_write_valid_in <= 'd0;
+
             in_valid <= 'd0;
         end else begin
             in_valid <= in_valid_mux;
@@ -101,6 +124,9 @@ module commit(
                 store_val_in <= execute_store_val;
                 store_size_in <= execute_store_size;
                 store_valid_in <= execute_store_valid;
+                csr_write_addr_in <= execute_csr_write_addr;
+                csr_write_val_in <= execute_csr_write_val;
+                csr_write_valid_in <= execute_csr_write_valid;
             end else if (in_valid_mux == 1) begin
                 rd_in <= rd_in;
                 rd_val_in <= rd_val_in;
@@ -114,6 +140,9 @@ module commit(
                 store_val_in <= store_val_in;
                 store_size_in <= store_size_in;
                 store_valid_in <= store_valid_in;
+                csr_write_addr_in <= csr_write_addr_in;
+                csr_write_val_in <= csr_write_val_in;
+                csr_write_valid_in <= csr_write_valid_in;
             end else begin
                 rd_in <= 'd0;
                 rd_val_in <= 'd0;
@@ -127,6 +156,9 @@ module commit(
                 store_val_in <= 'd0;
                 store_size_in <= 'd0;
                 store_valid_in <= 'd0;
+                csr_write_addr_in <= 'd0;
+                csr_write_val_in <= 'd0;
+                csr_write_valid_in <= 'd0;
             end
         end
     end
@@ -135,34 +167,115 @@ module commit(
     localparam COMMIT = 1;
     localparam EXCEPTION = 2;
     localparam WAIT_FIFO = 3;
-    var int commit;
+    localparam WAIT_CSRW = 4;
+    var int commit_kind;
 
-    assign commit = (!in_valid) ? NODATA :
-                    (exception_valid_in) ? EXCEPTION :
-                    (store_valid_in && datafifo_full) ? WAIT_FIFO : COMMIT;
-    assign execute_stall = commit == WAIT_FIFO;
+    assign commit_kind = (!in_valid) ? NODATA :
+                         (exception_valid_in) ? EXCEPTION :
+                         (store_valid_in && datafifo_full) ? WAIT_FIFO :
+                         (csr_write_valid_in) ? WAIT_CSRW : COMMIT;
+    assign execute_stall = (commit_kind == WAIT_FIFO) || (commit_kind == WAIT_CSRW);
 
     // Register Writeback
     assign rd_out = rd_in;
     assign rd_val_out = rd_val_in;
-    assign rd_valid_out = (commit == COMMIT) && (rd_out != 'd0);
+    assign rd_valid_out = ((commit_kind == COMMIT) ||
+                           ((commit_kind == WAIT_CSRW) && csr_write_complete)) &&
+                          (rd_out != 'd0);
 
     assign datafifo_addr_out = store_addr_in;
     assign datafifo_val_out = store_val_in;
     assign datafifo_size_out = store_size_in;
-    assign datafifo_valid_out = (commit == COMMIT) && store_valid_in;
+    assign datafifo_valid_out = (commit_kind == COMMIT) && store_valid_in;
 
-    assign exception_num_out = exception_num_in;
-    assign exception_val_out = exception_val_in;
+    assign exception_num_out = (commit_kind == EXCEPTION) ? exception_num_in :
+                               (commit_kind == WAIT_CSRW) ? csr_write_exception_num : 'd0;
+    assign exception_val_out = (commit_kind == EXCEPTION) ? exception_val_in :
+                               (commit_kind == WAIT_CSRW) ? csr_write_exception_val : 'd0;
     assign exception_pc_out = inst_pc_in;
-    assign exception_valid_out = (commit == EXCEPTION);
+    assign exception_valid_out = (commit_kind == EXCEPTION) ? 'd1 :
+                                 (commit_kind == WAIT_CSRW) ? csr_write_exception_valid : 'd0;
 
-    assign commit_valid = (commit == EXCEPTION) || (commit == COMMIT);
-    assign pipeline_flush = (commit == EXCEPTION) ||
-                            ((commit == COMMIT) && jump_valid_in);
+    assign commit_valid = (commit_kind == EXCEPTION) || (commit_kind == COMMIT) ||
+                          ((commit_kind == WAIT_CSRW) && csr_write_complete);
+    assign pipeline_flush = (commit_kind == EXCEPTION) ||
+                            ((commit_kind == COMMIT) && jump_valid_in) ||
+                            ((commit_kind == WAIT_CSRW) && csr_write_exception_valid);
     assign pipeline_pc = jump_pc_in;
 
+    // Axi-Lite CSW Write SM
 
+    localparam EXCEPTION_INVALID_INST = 'd2;
+
+    wire csr_write_complete;
+    wire [5:0]csr_write_exception_num = EXCEPTION_INVALID_INST;
+    wire [31:0]csr_write_exception_val = 'd0;
+    wire csr_write_exception_valid;
+
+    reg csr_write_exception_buffer;
+    assign csr_write_exception_valid = csr_write_exception_buffer;
+
+    enum int unsigned {
+        IDLE,
+        WADDR,
+        WDATA,
+        BRESP,
+        CSR_COMMIT
+    } cw_state, cw_next_state;
+
+    assign csr_write_complete = cw_state == CSR_COMMIT;
+
+    assign axil_csr_awaddr = csr_write_addr_in;
+    assign axil_csr_awvalid = cw_state == WADDR;
+
+    assign axil_csr_wdata = csr_write_val_in;
+    assign axil_csr_wvalid = cw_state == WDATA;
+
+    assign axil_csr_bready = cw_state == BRESP;
+
+    // Buffer BRESP exception valid for a cycle
+    always_ff @(posedge clk) begin
+        if (reset == 'd1)
+            csr_write_exception_buffer <= 'd0;
+        else
+            if (cw_state == BRESP)
+                csr_write_exception_buffer <= axil_csr_bvalid && (axil_csr_bresp == 'd0);
+            else
+                csr_write_exception_buffer <= 'd0;
+    end
+
+    always_comb begin
+        if (cw_state == IDLE)
+            if (commit_kind == WAIT_CSRW)
+                cw_next_state = WADDR;
+            else
+                cw_next_state = IDLE;
+        else if(cw_state == WADDR)
+            if (axil_csr_awready == 'd1)
+                cw_next_state = WDATA;
+            else
+                cw_next_state = WADDR;
+        else if (cw_state == WDATA)
+            if (axil_csr_wready == 'd1)
+                cw_next_state = BRESP;
+            else
+                cw_next_state = WDATA;
+        else if(cw_state == BRESP)
+            if (axil_csr_bvalid == 'd1)
+                cw_next_state = CSR_COMMIT;
+            else
+                cw_next_state = BRESP;
+        else //(cw_state == CSR_COMMIT
+            cw_next_state = IDLE;
+    end
+
+    always_ff @(posedge clk) begin
+        if (reset == 'd1) begin
+            cw_state <= IDLE;
+        end else begin
+            cw_state <= cw_next_state;
+        end
+    end
 
 
 endmodule

@@ -10,6 +10,7 @@
 `include "execute/execute_load.sv"
 `include "execute/execute_fence.sv"
 `include "execute/execute_ecall.sv"
+`include "execute/execute_csr.sv"
 
 module execute(
     input clk,
@@ -18,6 +19,7 @@ module execute(
 
     input var [6:0]decode_opcode,
     input var [4:0]decode_rd,
+    input var [4:0]decode_rs1,
     input var [4:0]decode_rs2,
     input var [2:0]decode_funct3,
     input var [6:0]decode_funct7,
@@ -39,6 +41,14 @@ module execute(
     input mem_data_valid,
     input mem_data_access_fault,
 
+    output [11:0]axil_csr_araddr,
+    output axil_csr_arvalid,
+    input axil_csr_arready,
+    input [31:0]axil_csr_rdata,
+    input [1:0]axil_csr_rresp,
+    input axil_csr_rvalid,
+    output axil_csr_rready,
+
     output valid,
     output processing,
     output [4:0]processing_rd,
@@ -54,12 +64,16 @@ module execute(
     output [31:0]store_addr_out,
     output [31:0]store_val_out,
     output [1:0]store_size_out,
-    output store_valid_out
+    output store_valid_out,
+    output [11:0]csr_write_addr_out,
+    output [31:0]csr_write_val_out,
+    output csr_write_valid_out
     );
 
     // Input register
     reg [6:0]opcode_in;
     reg [4:0]rd_in;
+    reg [4:0]rs1_in;
     reg [4:0]rs2_in;
     reg [2:0]funct3_in;
     reg [6:0]funct7_in;
@@ -84,7 +98,8 @@ module execute(
                     ex_store_valid ||
                     ex_load_valid ||
                     ex_fence_valid ||
-                    ex_ecall_valid;
+                    ex_ecall_valid ||
+                    ex_csr_valid;
     assign processing = ex_alu_processing ||
                         ex_branch_processing ||
                         ex_jump_processing ||
@@ -92,21 +107,23 @@ module execute(
                         ex_store_processing ||
                         ex_load_processing ||
                         ex_fence_processing ||
-                        ex_ecall_processing;
+                        ex_ecall_processing ||
+                        ex_csr_processing;
 
     assign processing_rd = processing ? rd_in : 'd0;
 
-    var [7:0] ex_list = {ex_alu_processing,
+    var [8:0] ex_list = {ex_alu_processing,
                          ex_branch_processing,
                          ex_jump_processing,
                          ex_shift_processing,
                          ex_store_processing,
                          ex_load_processing,
                          ex_fence_processing,
-                         ex_ecall_processing};
+                         ex_ecall_processing,
+                         ex_csr_processing};
     always_comb begin
         int count = 0;
-        for (int i = 0; i < 8; i++) begin
+        for (int i = 0; i < 9; i++) begin
             count += {31'b0, ex_list[i]};
         end
         // TODO: Figure out how to make this assert fire when running
@@ -120,6 +137,7 @@ module execute(
         if (reset == 'd1) begin
             opcode_in <= 'd0;
             rd_in <= 'd0;
+            rs1_in <= 'd0;
             rs2_in <= 'd0;
             funct3_in <= 'd0;
             funct7_in <= 'd0;
@@ -136,6 +154,7 @@ module execute(
             if (read_valid == 'd1) begin
                 opcode_in <= decode_opcode;
                 rd_in <= decode_rd;
+                rs1_in <= decode_rs1;
                 rs2_in <= decode_rs2;
                 funct3_in <= decode_funct3;
                 funct7_in <= decode_funct7;
@@ -152,6 +171,7 @@ module execute(
             end else if (in_valid_mux == 'd1) begin
                 opcode_in <= opcode_in;
                 rd_in <= rd_in;
+                rs1_in <= rs1_in;
                 rs2_in <= rs2_in;
                 funct3_in <= funct3_in;
                 funct7_in <= funct7_in;
@@ -168,6 +188,7 @@ module execute(
             end else begin
                 opcode_in <= 'd0;
                 rd_in <= 'd0;
+                rs1_in <= 'd0;
                 rs2_in <= 'd0;
                 funct3_in <= 'd0;
                 funct7_in <= 'd0;
@@ -200,6 +221,7 @@ module execute(
                                ex_jump_processing ? ex_jump_rd_val :
                                ex_shift_processing ? ex_shift_rd_val :
                                ex_load_processing ? ex_load_rd_val :
+                               ex_csr_processing ? ex_csr_rd_val :
                                'h013c0de;
 
     wire [5:0]exception_num_result = ex_alu_processing ? 'd0 :
@@ -208,6 +230,7 @@ module execute(
                                      ex_store_processing ? ex_store_exception_num_result :
                                      ex_load_processing ? ex_load_exception_num_result :
                                      ex_ecall_processing ? ex_ecall_exception_num_result :
+                                     ex_csr_processing ? ex_csr_exception_num_result :
                                      'd0;
     wire [31:0]exception_val_result = 'd0;
 
@@ -217,17 +240,26 @@ module execute(
                                   ex_store_processing ? ex_store_exception_valid_result :
                                   ex_load_processing ? ex_load_exception_valid_result :
                                   ex_ecall_processing ? ex_ecall_exception_valid_result :
+                                  ex_csr_processing ? ex_csr_exception_valid_result :
                                   'd0;
 
     wire [31:0]store_addr_result = ex_store_processing ? ex_store_addr_result :
-                                                         'h014c0de;
+                                                         'h014c0de0;
     wire [31:0]store_val_result = ex_store_processing ? ex_store_val_result :
-                                                         'h015c0de;
+                                                         'h015c0de0;
                 
     wire [1:0]store_size_result = ex_store_processing ? ex_store_size_result : 'd0;
     wire store_valid_result = ex_store_processing ? ex_store_valid_result : 'd0;
 
-    wire [207:0]hold_in = {store_valid_result,
+    wire [11:0]csr_write_addr_result = ex_csr_processing ? ex_csr_write_addr_result : 'd0;
+    wire [31:0]csr_write_val_result = ex_csr_processing ? ex_csr_write_val_result :
+                                                          'h017c0de0;
+    wire csr_write_valid_result = ex_csr_processing ? ex_csr_write_valid_result : 'd0;
+
+    wire [252:0]hold_in = {csr_write_valid_result,
+                           csr_write_val_result,
+                           csr_write_addr_result,
+                           store_valid_result,
                            store_size_result,
                            store_val_result,
                            store_addr_result,
@@ -240,9 +272,9 @@ module execute(
                            rd_val_result,
                            rd_in};
 
-    wire [207:0]hold_out;
+    wire [252:0]hold_out;
 
-    hold #(208) h0(
+    hold #(253) h0(
         .clk(clk),
         .reset(reset),
         .flush(flush),
@@ -264,6 +296,9 @@ module execute(
     assign store_val_out = hold_out[204:173];
     assign store_size_out = hold_out[206:205];
     assign store_valid_out = hold_out[207];
+    assign csr_write_addr_out = hold_out[219:208];
+    assign csr_write_val_out = hold_out[251:220];
+    assign csr_write_valid_out = hold_out[252];
 
     // ALU
     localparam ALU_UNKNOWN = 8;
@@ -519,6 +554,44 @@ module execute(
         .valid(ex_ecall_valid),
         .exception_num_out(ex_ecall_exception_num_result),
         .exception_valid_out(ex_ecall_exception_valid_result));
+
+    // CSR execution unit
+    wire ex_csr_processing;
+    wire ex_csr_valid;
+    wire [31:0]ex_csr_rd_val;
+    wire [5:0]ex_csr_exception_num_result;
+    wire ex_csr_exception_valid_result;
+
+    wire [11:0]ex_csr_write_addr_result;
+    wire [31:0]ex_csr_write_val_result;
+    wire ex_csr_write_valid_result;
+
+    execute_csr ex_csr0(
+        .clk(clk),
+        .reset(reset),
+        .flush(flush),
+        .decode_opcode(opcode_in),
+        .decode_funct3(funct3_in),
+        .decode_rd(rd_in),
+        .decode_rs1(rs1_in),
+        .decode_imm(imm_in[11:0]),
+        .read_rs1_val(rs1_val_in),
+        .read_valid(first_cycle),
+        .axil_csr_araddr(axil_csr_araddr),
+        .axil_csr_arvalid(axil_csr_arvalid),
+        .axil_csr_arready(axil_csr_arready),
+        .axil_csr_rdata(axil_csr_rdata),
+        .axil_csr_rresp(axil_csr_rresp),
+        .axil_csr_rvalid(axil_csr_rvalid),
+        .axil_csr_rready(axil_csr_rready),
+        .csr_write_addr(ex_csr_write_addr_result),
+        .csr_write_val(ex_csr_write_val_result),
+        .csr_write_valid(ex_csr_write_valid_result),
+        .processing(ex_csr_processing),
+        .valid(ex_csr_valid),
+        .rd_val_out(ex_csr_rd_val),
+        .exception_num_out(ex_csr_exception_num_result),
+        .exception_valid_out(ex_csr_exception_valid_result));
 
 endmodule
 

@@ -28,6 +28,7 @@ module read_registers(
 
     output var [6:0] opcode_out,
     output var [4:0] rd_out,
+    output var [4:0] rs1_out,
     output var [4:0] rs2_out,
     output var [31:0] rs1_val_out,
     output var [31:0] rs2_val_out,
@@ -93,6 +94,7 @@ module read_registers(
     // Pass through decode states
     assign opcode_out = opcode_buffer;
     assign rd_out = rd_buffer;
+    assign rs1_out = rs1_buffer;
     assign rs2_out = rs2_buffer;
     assign funct3_out = funct3_buffer;
     assign funct7_out = funct7_buffer;

@@ -32,7 +32,27 @@ module pipeline(
     output [1:0]mem_data_size,
     input [31:0] mem_data_in,
     input mem_data_valid,
-    input mem_data_access_fault
+    input mem_data_access_fault,
+
+    // Axi-Lite CSR Read bus
+    output [11:0]axil_csr_araddr,
+    output axil_csr_arvalid,
+    input axil_csr_arready,
+    input [31:0]axil_csr_rdata,
+    input [1:0]axil_csr_rresp,
+    input axil_csr_rvalid,
+    output axil_csr_rready,
+
+    // Axi-Lite CSR Write
+    output [11:0]axil_csr_awaddr,
+    output axil_csr_awvalid,
+    input axil_csr_awready,
+    output [31:0]axil_csr_wdata,
+    output axil_csr_wvalid,
+    input axil_csr_wready,
+    input [2:0]axil_csr_bresp,
+    input axil_csr_bvalid,
+    output axil_csr_bready
 
     );
 
@@ -129,6 +149,7 @@ module pipeline(
 
     wire [6:0]rr_opcode;
     wire [4:0]rr_rd;
+    wire [4:0]rr_rs1;
     wire [4:0]rr_rs2;
     wire [31:0]rr_rs1_val;
     wire [31:0]rr_rs2_val;
@@ -164,6 +185,7 @@ module pipeline(
         .exec_rd(execute_rd),
         .opcode_out(rr_opcode),
         .rd_out(rr_rd),
+        .rs1_out(rr_rs1),
         .rs2_out(rr_rs2),
         .rs1_val_out(rr_rs1_val),
         .rs2_val_out(rr_rs2_val),
@@ -194,6 +216,9 @@ module pipeline(
     wire [31:0]execute_store_val;
     wire [1:0]execute_store_size;
     wire execute_store_valid;
+    wire [11:0]execute_csr_write_addr;
+    wire [31:0]execute_csr_write_val;
+    wire execute_csr_write_valid;
 
     execute execute0(
         .clk(clk),
@@ -201,6 +226,7 @@ module pipeline(
         .flush(pipeline_flush),
         .decode_opcode(rr_opcode),
         .decode_rd(rr_rd),
+        .decode_rs1(rr_rs1),
         .decode_rs2(rr_rs2),
         .decode_funct3(rr_funct3),
         .decode_funct7(rr_funct7),
@@ -218,6 +244,13 @@ module pipeline(
         .mem_data_in(mem_data_in),
         .mem_data_valid(mem_data_valid),
         .mem_data_access_fault(mem_data_access_fault),
+        .axil_csr_araddr(axil_csr_araddr),
+        .axil_csr_arvalid(axil_csr_arvalid),
+        .axil_csr_arready(axil_csr_arready),
+        .axil_csr_rdata(axil_csr_rdata),
+        .axil_csr_rresp(axil_csr_rresp),
+        .axil_csr_rvalid(axil_csr_rvalid),
+        .axil_csr_rready(axil_csr_rready),
         .valid(execute_valid),
         .processing(execute_processing),
         .processing_rd(execute_processing_rd),
@@ -233,7 +266,10 @@ module pipeline(
         .store_addr_out(execute_store_addr),
         .store_val_out(execute_store_val),
         .store_size_out(execute_store_size),
-        .store_valid_out(execute_store_valid));
+        .store_valid_out(execute_store_valid),
+        .csr_write_addr_out(execute_csr_write_addr),
+        .csr_write_val_out(execute_csr_write_val),
+        .csr_write_valid_out(execute_csr_write_valid));
 
     wire execute_stall;
 
@@ -259,6 +295,9 @@ module pipeline(
         .execute_store_val(execute_store_val),
         .execute_store_size(execute_store_size),
         .execute_store_valid(execute_store_valid),
+        .execute_csr_write_addr(execute_csr_write_addr),
+        .execute_csr_write_val(execute_csr_write_val),
+        .execute_csr_write_valid(execute_csr_write_valid),
         .datafifo_full(datafifo_full),
         .datafifo_addr_out(datafifo_addr_out),
         .datafifo_val_out(datafifo_val_out),
@@ -274,7 +313,16 @@ module pipeline(
         .commit_valid(commit_valid),
         .execute_stall(execute_stall),
         .pipeline_flush(pipeline_flush),
-        .pipeline_pc(commit_jump_pc));
+        .pipeline_pc(commit_jump_pc),
+        .axil_csr_awaddr(axil_csr_awaddr),
+        .axil_csr_awvalid(axil_csr_awvalid),
+        .axil_csr_awready(axil_csr_awready),
+        .axil_csr_wdata(axil_csr_wdata),
+        .axil_csr_wvalid(axil_csr_wvalid),
+        .axil_csr_wready(axil_csr_wready),
+        .axil_csr_bresp(axil_csr_bresp),
+        .axil_csr_bvalid(axil_csr_bvalid),
+        .axil_csr_bready(axil_csr_bready));
 
 
 endmodule
