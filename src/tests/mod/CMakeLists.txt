@@ -90,6 +90,10 @@ add_module_test(TOP load_tester
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/load_tester.cpp
 )
 
+add_module_test(TOP execute_csr
+    SRC ${CMAKE_CURRENT_SOURCE_DIR}/execute_csr.cpp
+)
+
 add_module_test(TOP hold
     SRC ${CMAKE_CURRENT_SOURCE_DIR}/hold.cpp
 )

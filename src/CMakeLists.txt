@@ -171,6 +171,13 @@ add_verilator_library(
 )
 
 add_verilator_library(
+    TOP execute_csr
+    TOP_DIR src/execute
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_csr.sv"
+)
+
+
+add_verilator_library(
     TOP hold
     TOP_DIR src/pipeline
     EXTRA_ARGS -GWIDTH=8
