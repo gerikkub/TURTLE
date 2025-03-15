@@ -174,7 +174,7 @@ TEST_F(ReadRegistersTest, RegisterConflict) {
     mod->decode_imm = 0xAABBCDEF;
     mod->decode_pc = 0x12345566;
     mod->decode_exception_valid = 0;
-    mod->exec_rd = 2;
+    mod->exec_rd = 1 << 2;
 
     mod->rs1_val = 0x55667890;
     mod->rs2_val = 0x23456677;
@@ -187,7 +187,7 @@ TEST_F(ReadRegistersTest, RegisterConflict) {
     ASSERT_EQ(mod->decode_stall, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    mod->exec_rd = 3;
+    mod->exec_rd = 1 << 3;
     clk();
     ASSERT_EQ(mod->decode_stall, 1);
     ASSERT_EQ(mod->valid, 0);
@@ -196,7 +196,7 @@ TEST_F(ReadRegistersTest, RegisterConflict) {
     ASSERT_EQ(mod->decode_stall, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    mod->exec_rd = 4;
+    mod->exec_rd = 1 << 4;
     eval();
     ASSERT_EQ(mod->decode_stall, 0);
     ASSERT_EQ(mod->valid, 1);

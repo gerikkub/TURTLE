@@ -1,5 +1,7 @@
 `timescale 1ns / 1ns
 
+`include "utils/decoder.sv"
+
 module read_registers(
     input clk,
     input reset,
@@ -24,7 +26,7 @@ module read_registers(
     output [4:0]read_rs2,
     input [31:0]rs2_val,
 
-    input [4:0]exec_rd,
+    input [31:0]exec_rd,
 
     output var [6:0] opcode_out,
     output var [4:0] rd_out,
@@ -55,6 +57,21 @@ module read_registers(
     reg exception_valid_buffer;
     reg decode_buffer_valid;
 
+    wire [31:0]rs1_decode;
+    wire [31:0]rs2_decode;
+    wire [31:0]rs_decode = rs1_decode | rs2_decode;
+
+    decoder #(5) rs1_decoder(
+        .bus_in(rs1_buffer),
+        .data_out(rs1_decode));
+
+    decoder #(5) rs2_decoder(
+        .bus_in(rs2_buffer),
+        .data_out(rs2_decode));
+
+    wire rs_conflict = (rs_decode[31:1] & exec_rd[31:1]) != 0;
+
+
     // Advance if:
     // decode_buffer_valid AND
     //   there is an incoming exception OR
@@ -62,9 +79,7 @@ module read_registers(
     wire should_advance = ~flush &&
                           ~stall &&
                           decode_buffer_valid &&
-                          (exception_valid_buffer ||
-                           (((rs1_buffer != exec_rd) || rs1_buffer == 'd0) &&
-                            ((rs2_buffer != exec_rd) || rs2_buffer == 'd0)));
+                          (exception_valid_buffer || (!rs_conflict));
                            
     wire should_stall = ~flush &&
                         decode_buffer_valid &&

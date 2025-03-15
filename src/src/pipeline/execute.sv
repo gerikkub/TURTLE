@@ -11,6 +11,7 @@
 `include "execute/execute_fence.sv"
 `include "execute/execute_ecall.sv"
 `include "execute/execute_csr.sv"
+`include "utils/decoder.sv"
 
 module execute(
     input clk,
@@ -51,7 +52,7 @@ module execute(
 
     output valid,
     output processing,
-    output [4:0]processing_rd,
+    output [31:0]processing_rd,
     input stall, 
     output [4:0]rd_out,
     output [31:0]rd_val_out,
@@ -110,17 +111,23 @@ module execute(
                         ex_ecall_processing ||
                         ex_csr_processing;
 
-    assign processing_rd = processing ? rd_in : 'd0;
+    wire [31:0]rd_decode;
 
-    var [8:0] ex_list = {ex_alu_processing,
-                         ex_branch_processing,
-                         ex_jump_processing,
-                         ex_shift_processing,
-                         ex_store_processing,
-                         ex_load_processing,
-                         ex_fence_processing,
-                         ex_ecall_processing,
-                         ex_csr_processing};
+    decoder #(5) rd_decoder (
+        .bus_in(rd_in),
+        .data_out(rd_decode));
+
+    assign processing_rd = processing ? rd_decode : 'd0;
+
+    logic [8:0] ex_list = {ex_alu_processing,
+                           ex_branch_processing,
+                           ex_jump_processing,
+                           ex_shift_processing,
+                           ex_store_processing,
+                           ex_load_processing,
+                           ex_fence_processing,
+                           ex_ecall_processing,
+                           ex_csr_processing};
     always_comb begin
         int count = 0;
         for (int i = 0; i < 9; i++) begin

@@ -160,6 +160,298 @@ TEST_F(CommitTest, Jump) {
     ASSERT_EQ(mod->execute_stall, 0);
 }
 
+TEST_F(CommitTest, CsrWrite) {
+    reset();
+
+    mod->execute_valid = 1;
+    mod->execute_rd = 7;
+    mod->execute_rd_val = 0xABCD2233;
+    mod->execute_jump_valid = 0;
+    mod->execute_exception_valid = 0;
+    mod->execute_store_valid = 0;
+    mod->execute_csr_write_addr = 0x987;
+    mod->execute_csr_write_val = 0xAABBCDEF;
+    mod->execute_csr_write_valid = 1;
+    clk();
+    mod->execute_valid = 0;
+    mod->execute_rd = 0;
+    mod->execute_rd_val = 0;
+    mod->execute_jump_valid = 0;
+    mod->execute_exception_valid = 0;
+    mod->execute_store_valid = 0;
+    mod->execute_csr_write_addr = 0;
+    mod->execute_csr_write_val = 0;
+    mod->execute_csr_write_valid = 0;
+    eval();
+    // One buffer cycle
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+    clk();
+
+    // In WADDR
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 1);
+    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    mod->axil_csr_awready = 1;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->axil_csr_awvalid, 1);
+    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    mod->axil_csr_awready = 0;
+    eval();
+    // In WDATA
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 1);
+    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    mod->axil_csr_wready = 1;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 1);
+    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    mod->axil_csr_wready = 0;
+    eval();
+    // In BRESP
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 1);
+
+    mod->axil_csr_bvalid = 1;
+    mod->axil_csr_bresp = 0;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 1);
+
+    clk();
+    mod->axil_csr_bvalid = 0;
+    mod->axil_csr_bresp = 0;
+    eval();
+    // In CSR_COMMIT
+    ASSERT_EQ(mod->commit_valid, 1);
+    ASSERT_EQ(mod->execute_stall, 0);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 1);
+    ASSERT_EQ(mod->rd_out, 7);
+    ASSERT_EQ(mod->rd_val_out, 0xABCD2233);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 0);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+}
+
+TEST_F(CommitTest, CsrWriteException) {
+    reset();
+
+    mod->execute_valid = 1;
+    mod->execute_rd = 7;
+    mod->execute_rd_val = 0xABCD2233;
+    mod->execute_jump_valid = 0;
+    mod->execute_exception_valid = 0;
+    mod->execute_store_valid = 0;
+    mod->execute_csr_write_addr = 0x987;
+    mod->execute_csr_write_val = 0xAABBCDEF;
+    mod->execute_csr_write_valid = 1;
+    clk();
+    mod->execute_valid = 0;
+    mod->execute_rd = 0;
+    mod->execute_rd_val = 0;
+    mod->execute_jump_valid = 0;
+    mod->execute_exception_valid = 0;
+    mod->execute_store_valid = 0;
+    mod->execute_csr_write_addr = 0;
+    mod->execute_csr_write_val = 0;
+    mod->execute_csr_write_valid = 0;
+    eval();
+    // One buffer cycle
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+    clk();
+
+    // In WADDR
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 1);
+    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+    clk();
+    clk();
+    clk();
+    clk();
+
+    mod->axil_csr_awready = 1;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->axil_csr_awvalid, 1);
+    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    mod->axil_csr_awready = 0;
+    eval();
+    // In WDATA
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 1);
+    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+    clk();
+    clk();
+    clk();
+    clk();
+
+    mod->axil_csr_wready = 1;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 1);
+    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    mod->axil_csr_wready = 0;
+    eval();
+    // In BRESP
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 1);
+    clk();
+    clk();
+    clk();
+
+    mod->axil_csr_bvalid = 1;
+    mod->axil_csr_bresp = 3;
+    eval();
+    // No Change
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 1);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 1);
+
+    clk();
+    mod->axil_csr_bvalid = 0;
+    mod->axil_csr_bresp = 0;
+    eval();
+    // In CSR_COMMIT
+    ASSERT_EQ(mod->commit_valid, 1);
+    ASSERT_EQ(mod->execute_stall, 0);
+    ASSERT_EQ(mod->pipeline_flush, 1);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 1);
+    ASSERT_EQ(mod->exception_num_out, 2);
+
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+
+    clk();
+    ASSERT_EQ(mod->commit_valid, 0);
+    ASSERT_EQ(mod->execute_stall, 0);
+    ASSERT_EQ(mod->pipeline_flush, 0);
+    ASSERT_EQ(mod->rd_valid_out, 0);
+    ASSERT_EQ(mod->datafifo_valid_out, 0);
+    ASSERT_EQ(mod->exception_valid_out, 0);
+    ASSERT_EQ(mod->axil_csr_awvalid, 0);
+    ASSERT_EQ(mod->axil_csr_wvalid, 0);
+    ASSERT_EQ(mod->axil_csr_bready, 0);
+}
+
 TEST_F(CommitTest, Exception) {
     /* TODO
     reset();

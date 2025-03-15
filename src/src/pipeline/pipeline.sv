@@ -52,7 +52,8 @@ module pipeline(
     input axil_csr_wready,
     input [2:0]axil_csr_bresp,
     input axil_csr_bvalid,
-    output axil_csr_bready
+    output axil_csr_bready,
+    output axil_csr_areset
 
     );
 
@@ -60,6 +61,9 @@ module pipeline(
     wire pipeline_flush;
     wire [31:0]commit_jump_pc;
 
+    // Reset the CSR Axi Write bus on a pipeline flush
+    // to stop in transactions in progress
+    assign axil_csr_areset = !pipeline_flush;
 
     wire fetch_jump_pc = pipeline_flush;
     wire [31:0]fetch_jump_pc_addr = commit_jump_pc;
@@ -162,6 +166,8 @@ module pipeline(
     wire [5:0]rr_exception_num;
     wire rr_exception_valid;
 
+    wire [31:0]active_rd = execute_active_rd | commit_active_rd;
+
     read_registers read_registers0(
         .clk(clk),
         .reset(reset),
@@ -182,7 +188,7 @@ module pipeline(
         .rs1_val(rf_rs1_val),
         .read_rs2(rf_read_rs2),
         .rs2_val(rf_rs2_val),
-        .exec_rd(execute_rd),
+        .exec_rd(active_rd),
         .opcode_out(rr_opcode),
         .rd_out(rr_rd),
         .rs1_out(rr_rs1),
@@ -202,7 +208,7 @@ module pipeline(
 
     wire execute_valid;
     wire execute_processing;
-    wire [4:0]execute_processing_rd;
+    wire [31:0]execute_active_rd;
 
     wire [4:0]execute_rd;
     wire [31:0]execute_rd_val;
@@ -253,7 +259,7 @@ module pipeline(
         .axil_csr_rready(axil_csr_rready),
         .valid(execute_valid),
         .processing(execute_processing),
-        .processing_rd(execute_processing_rd),
+        .processing_rd(execute_active_rd),
         .stall(execute_stall),
         .rd_out(execute_rd),
         .rd_val_out(execute_rd_val),
@@ -274,6 +280,7 @@ module pipeline(
     wire execute_stall;
 
     wire commit_valid;
+    wire [31:0]commit_active_rd;
     wire [5:0]commit_exception_num;
     wire [31:0]commit_exception_val;
     wire [31:0]commit_exception_pc;
@@ -314,6 +321,7 @@ module pipeline(
         .execute_stall(execute_stall),
         .pipeline_flush(pipeline_flush),
         .pipeline_pc(commit_jump_pc),
+        .active_rd(commit_active_rd),
         .axil_csr_awaddr(axil_csr_awaddr),
         .axil_csr_awvalid(axil_csr_awvalid),
         .axil_csr_awready(axil_csr_awready),

@@ -1,5 +1,7 @@
 `timescale 1ns / 1ns
 
+`include "utils/decoder.sv"
+
 module commit(
     input clk,
     input reset,
@@ -51,8 +53,10 @@ module commit(
     output execute_stall,
     output pipeline_flush,
     output [31:0]pipeline_pc,
+    output [31:0]active_rd,
 
     // Axi-Lite CSR Write
+    // Note: This could probably be a simpler bus
     output [11:0]axil_csr_awaddr,
     output axil_csr_awvalid,
     input axil_csr_awready,
@@ -174,13 +178,13 @@ module commit(
                          (exception_valid_in) ? EXCEPTION :
                          (store_valid_in && datafifo_full) ? WAIT_FIFO :
                          (csr_write_valid_in) ? WAIT_CSRW : COMMIT;
-    assign execute_stall = (commit_kind == WAIT_FIFO) || (commit_kind == WAIT_CSRW);
+    assign execute_stall = (commit_kind == WAIT_FIFO) || ((commit_kind == WAIT_CSRW) && (!csr_write_complete));
 
     // Register Writeback
     assign rd_out = rd_in;
     assign rd_val_out = rd_val_in;
     assign rd_valid_out = ((commit_kind == COMMIT) ||
-                           ((commit_kind == WAIT_CSRW) && csr_write_complete)) &&
+                           ((commit_kind == WAIT_CSRW) && csr_write_complete && (!csr_write_exception_valid))) &&
                           (rd_out != 'd0);
 
     assign datafifo_addr_out = store_addr_in;
@@ -202,6 +206,16 @@ module commit(
                             ((commit_kind == COMMIT) && jump_valid_in) ||
                             ((commit_kind == WAIT_CSRW) && csr_write_exception_valid);
     assign pipeline_pc = jump_pc_in;
+
+    wire [31:0]rd_decode;
+    decoder #(5) rd_decoder(
+        .bus_in(rd_in),
+        .data_out(rd_decode));
+
+    // Assign an active RD while waiting for CSR_COMMIT
+    // Signal should not be value while rd_valid_out is set
+    assign active_rd = (commit_kind != WAIT_CSRW) ? 'd0 :
+                       (cw_state != CSR_COMMIT) ? rd_decode : 'd0;
 
     // Axi-Lite CSW Write SM
 
@@ -239,7 +253,7 @@ module commit(
             csr_write_exception_buffer <= 'd0;
         else
             if (cw_state == BRESP)
-                csr_write_exception_buffer <= axil_csr_bvalid && (axil_csr_bresp == 'd0);
+                csr_write_exception_buffer <= axil_csr_bvalid && (axil_csr_bresp != 'd0);
             else
                 csr_write_exception_buffer <= 'd0;
     end

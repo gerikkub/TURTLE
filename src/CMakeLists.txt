@@ -116,6 +116,7 @@ add_verilator_library(
     TOP read_registers
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/read_registers.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/decoder.sv"
 )
 
 add_verilator_library(
@@ -198,12 +199,19 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_fence.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/execute_ecall.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/execute/alu.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/decoder.sv"
 )
 
 add_verilator_library(
     TOP commit
     TOP_DIR src/pipeline
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/commit.sv"
+)
+
+add_verilator_library(
+    TOP decoder
+    TOP_DIR src/utils
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/decoder.sv"
 )
 
 add_verilator_library(
@@ -227,6 +235,7 @@ add_verilator_library(
             "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/decode_inst.sv"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/instruction_fetch.sv"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/decoder.sv"
 )
 
 add_subdirectory(vcore_sim)

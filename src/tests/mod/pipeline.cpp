@@ -8,113 +8,203 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
 
     public:
 
+
     void simulate(int clks) {
 
         mod->datafifo_full = 0;
 
-        int cycle_count = 0;
+        m_cycle_count = 0;
         while (clks < 0 || clks--) {
-            if (mod->mem_fetch_addr_en) {
-                int ok;
-                uint32_t inst = 0;
-                ok = read_memory(mod->mem_fetch_addr, inst);
-                mod->mem_inst_in = inst;
-                mod->mem_inst_valid = 1;
-                mod->mem_inst_access_fault = ok != 0;
+            if (mod->datafifo_addr_out == 0xABCDE000 &&
+                mod->datafifo_val_out == 0x11223000 &&
+                mod->datafifo_size_out == 2) {
+
+                return;
             }
 
-            if (mod->mem_data_addr_valid) {
-                int ok;
-                uint32_t val;
-                switch (mod->mem_data_size) {
-                case 0:
-                {
-                    uint8_t data8;
-                    ok = read_memory(mod->mem_data_addr, data8);
-                    val = data8;
-                    break;
-                }
-                case 1:
-                {
-                    uint16_t data16;
-                    ok = read_memory(mod->mem_data_addr, data16);
-                    val = data16;
-                    break;
-                }
-                case 2:
-                {
-                    ok = read_memory(mod->mem_data_addr, val);
-                    break;
-                }
-                default:
-                    ASSERT_TRUE(false);
-                    break;
-                }
+            handle_inst_bus();
+            handle_data_bus();
+            handle_csr_bus();
 
-                if (ok == 0) {
-                    mod->mem_data_in = val;
-                    mod->mem_data_access_fault = 0;
-                    mod->mem_data_valid = 1;
-                } else {
-                    mod->mem_data_in = 0;
-                    mod->mem_data_access_fault = 1;
-                    mod->mem_data_valid = 1;
-                }
-            } else {
-                mod->mem_data_in = 0;
-                mod->mem_data_access_fault = 0;
-                mod->mem_data_valid = 0;
-            }
-
-            if (mod->datafifo_valid_out) {
-
-                if (mod->datafifo_addr_out == 0xABCDE000 &&
-                    mod->datafifo_val_out == 0x11223000 &&
-                    mod->datafifo_size_out == 2) {
-
-                    return;
-                }
-
-                int ok;
-                switch (mod->datafifo_size_out) {
-                case 0:
-                {
-                    const uint8_t data8 = mod->datafifo_val_out & 0xFF;
-                    ok = write_memory(mod->datafifo_addr_out, data8);
-                    break;
-                }
-                case 1:
-                {
-                    const uint16_t data16 = mod->datafifo_val_out & 0xFFFF;
-                    ok = write_memory(mod->datafifo_addr_out, data16);
-                    break;
-                }
-                case 2:
-                {
-                    const uint32_t data32 = mod->datafifo_val_out;
-                    ok = write_memory(mod->datafifo_addr_out, data32);
-                    break;
-                }
-                default:
-                    ASSERT_TRUE(false);
-                    break;
-                }
-
-                if (ok != 0) {
-                    std::printf("Bad Data Write at addr: %8x (%d)\n",
-                                mod->datafifo_addr_out,
-                                cycle_count);
-                }
-                ASSERT_EQ(ok, 0);
-            }
             clk();
-            cycle_count++;
+            m_cycle_count++;
         }
 
         ASSERT_TRUE(false);
     }
 
     private:
+
+    void handle_inst_bus(void) {
+        if (mod->mem_fetch_addr_en) {
+            int ok;
+            uint32_t inst = 0;
+            ok = read_memory(mod->mem_fetch_addr, inst);
+            mod->mem_inst_in = inst;
+            mod->mem_inst_valid = 1;
+            mod->mem_inst_access_fault = ok != 0;
+        }
+    }
+
+    void handle_data_bus(void) {
+        if (mod->mem_data_addr_valid) {
+            int ok;
+            uint32_t val;
+            switch (mod->mem_data_size) {
+            case 0:
+            {
+                uint8_t data8;
+                ok = read_memory(mod->mem_data_addr, data8);
+                val = data8;
+                break;
+            }
+            case 1:
+            {
+                uint16_t data16;
+                ok = read_memory(mod->mem_data_addr, data16);
+                val = data16;
+                break;
+            }
+            case 2:
+            {
+                ok = read_memory(mod->mem_data_addr, val);
+                break;
+            }
+            default:
+                ASSERT_TRUE(false);
+                break;
+            }
+
+            if (ok == 0) {
+                mod->mem_data_in = val;
+                mod->mem_data_access_fault = 0;
+                mod->mem_data_valid = 1;
+            } else {
+                mod->mem_data_in = 0;
+                mod->mem_data_access_fault = 1;
+                mod->mem_data_valid = 1;
+            }
+        } else {
+            mod->mem_data_in = 0;
+            mod->mem_data_access_fault = 0;
+            mod->mem_data_valid = 0;
+        }
+
+        if (mod->datafifo_valid_out) {
+
+            int ok;
+            switch (mod->datafifo_size_out) {
+            case 0:
+            {
+                const uint8_t data8 = mod->datafifo_val_out & 0xFF;
+                ok = write_memory(mod->datafifo_addr_out, data8);
+                break;
+            }
+            case 1:
+            {
+                const uint16_t data16 = mod->datafifo_val_out & 0xFFFF;
+                ok = write_memory(mod->datafifo_addr_out, data16);
+                break;
+            }
+            case 2:
+            {
+                const uint32_t data32 = mod->datafifo_val_out;
+                ok = write_memory(mod->datafifo_addr_out, data32);
+                break;
+            }
+            default:
+                ASSERT_TRUE(false);
+                break;
+            }
+
+            if (ok != 0) {
+                std::printf("Bad Data Write at addr: %8x (%d)\n",
+                            mod->datafifo_addr_out,
+                            m_cycle_count);
+            }
+            ASSERT_EQ(ok, 0);
+        }
+    }
+
+    int m_axil_write_addr;
+    int m_axil_write_resp;
+    int m_axil_read_addr;
+    void handle_csr_bus(void) {
+
+        // Clear all signals
+        mod->axil_csr_awready = 0;
+        mod->axil_csr_wready = 0;
+        mod->axil_csr_bresp = 0;
+        mod->axil_csr_bvalid = 0;
+        mod->axil_csr_arready = 0;
+        mod->axil_csr_rdata = 0;
+        mod->axil_csr_rresp = 3;
+
+        // Prioritize Writes over reads to make forward progress
+        if (mod->axil_csr_awvalid || 
+            mod->axil_csr_wvalid ||
+            mod->axil_csr_bready) {
+            ASSERT_EQ(mod->axil_csr_awvalid +
+                      mod->axil_csr_wvalid +
+                      mod->axil_csr_bready, 1);
+            if (mod->axil_csr_awvalid) {
+                m_axil_write_addr = mod->axil_csr_awaddr;
+                mod->axil_csr_awready = 1;
+            } else {
+                mod->axil_csr_awready = 0;
+            }
+            if (mod->axil_csr_wvalid) {
+                auto ok = write_csr(m_axil_write_addr,
+                                    mod->axil_csr_wdata);
+                m_axil_write_resp = ok ? 0 : 3;
+                mod->axil_csr_wready = 1;
+            } else {
+                mod->axil_csr_wready = 0;
+            }
+            if (mod->axil_csr_bready) {
+                mod->axil_csr_bresp = m_axil_write_resp;
+                mod->axil_csr_bvalid = 1;
+            } else {
+                mod->axil_csr_bresp = 0;
+                mod->axil_csr_bvalid = 0;
+            }
+
+        } else if (mod->axil_csr_arvalid ||
+                   mod->axil_csr_rready) {
+            ASSERT_EQ(mod->axil_csr_arvalid +
+                      mod->axil_csr_rready, 1);
+            if (mod->axil_csr_arvalid) {
+                m_axil_read_addr = mod->axil_csr_araddr;
+                mod->axil_csr_arready = 1;
+            } else {
+                mod->axil_csr_arready = 0;
+            }
+            if (mod->axil_csr_rready) {
+                auto read = read_csr(m_axil_read_addr);
+                if (read) {
+                    mod->axil_csr_rdata = *read;
+                    mod->axil_csr_rresp = 0;
+                } else {
+                    mod->axil_csr_rdata = 0;
+                    mod->axil_csr_rresp = 3;
+                }
+                mod->axil_csr_rvalid = 1;
+            } else {
+                mod->axil_csr_rvalid = 0;
+                mod->axil_csr_rdata = 0;
+                mod->axil_csr_rresp = 0;
+            }
+        }
+    }
+
+    std::optional<uint32_t> read_csr(const uint32_t addr) {
+        return m_csr_mem[addr];
+    }
+
+    bool write_csr(const uint32_t addr, const uint32_t val) {
+        m_csr_mem[addr] = val;
+        return true;
+    }
 
     std::optional<MemoryMap> get_map(const uint32_t addr) {
         for (auto m : m_mappings) {
@@ -149,6 +239,10 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
         *(T*)(mapping.value().data + offset) = w;
         return 0;
     }
+
+    int m_cycle_count;
+
+    std::array<uint32_t, 4096> m_csr_mem;
 
 };
 
@@ -297,6 +391,35 @@ TEST_F(PipelineTest, HazardWaW) {
         add x1, x1, x1 \n\
         add x1, x1, x1 \n\
         beq x2, x1, done \n\
+        loop: \n\
+        jal x0, loop \n\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4)\n");
+
+    simulate(100);
+}
+
+TEST_F(PipelineTest, CsrBus) {
+    reset();
+
+    // Write after Write for "add" instruction
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x1, 0xAABBC \n\
+        addi x1, x1, 0x123 \n\
+        csrrw x0, mscratch, x1 \n\
+        csrrw x2, mscratch, x0 \n\
+        bne x1, x2, loop \n\
+\
+        csrrsi x3, mscratch, 0x16 \n\
+        bne x1, x3, loop \n\
+\
+        ori x1, x1, 0x16 \n\
+        csrrw x2, mscratch, x0 \n\
+        beq x2, x1, done \n\
+\
         loop: \n\
         jal x0, loop \n\
         done: \n\
