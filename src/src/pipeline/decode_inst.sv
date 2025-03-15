@@ -21,7 +21,9 @@ module decode_inst(
         INST_S,
         INST_U,
         INST_B,
-        INST_J
+        INST_J,
+ // Some system instructions are both R and I
+        INST_SYSTEM
     } rv32_type;
 
     enum int unsigned {
@@ -127,7 +129,7 @@ module decode_inst(
             RV32G_BRANCH: rv32_type = INST_B;
             RV32G_JALR: rv32_type = INST_I;
             RV32G_JAL: rv32_type = INST_J;
-            RV32G_SYSTEM: rv32_type = INST_I;
+            RV32G_SYSTEM: rv32_type = INST_SYSTEM;
             //RV32G_OP_VE,
             //UNKNOWN
             // Note: This should trigger an invalid instruction elsewhere
@@ -176,6 +178,13 @@ module decode_inst(
             rs2 = 'd0;
             funct7 = 'd0;
             imm = {inst[31],inst[30:12],12'b0};
+        end else if (rv32_type == INST_SYSTEM) begin
+            rd = inst[11:7];
+            funct3 = inst[14:12];
+            rs1 = inst[19:15];
+            rs2 = inst[24:20];
+            funct7 = inst[31:25];
+            imm = {20'd0,inst[31:20]};
         end else begin // INST_J
             rd = inst[11:7];
             funct3 = 'd0;

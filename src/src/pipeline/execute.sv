@@ -556,6 +556,7 @@ module execute(
         .decode_opcode(opcode_in),
         .decode_funct3(funct3_in),
         .decode_funct7(funct7_in),
+        .decode_imm(imm_in[11:0]),
         .read_valid(first_cycle),
         .processing(ex_ecall_processing),
         .valid(ex_ecall_valid),

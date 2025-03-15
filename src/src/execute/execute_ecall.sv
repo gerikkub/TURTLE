@@ -4,6 +4,7 @@ module execute_ecall(
     input var [6:0]decode_opcode,
     input var [2:0]decode_funct3,
     input var [6:0]decode_funct7,
+    input var [11:0]decode_imm,
     input read_valid,
 
     output processing,
@@ -14,8 +15,9 @@ module execute_ecall(
 
     localparam SYSTEM_OPCODE = 'b1110011;
     localparam PRIV_FUNCT3 = 'b000;
-    localparam ECALL_FUNCT7 = 'b0000000;
-    localparam EBREAK_FUNCT7 = 'b0000001;
+    localparam ECALL_IMM = 'b00000000000;
+    localparam EBREAK_IMM = 'b00000000001;
+    localparam WFI_IMM = 'b000100000101;
 
     localparam EXCEPTION_ECALL_M = 'd11;
     localparam EXCEPTION_EBREAK = 'd3;
@@ -23,14 +25,15 @@ module execute_ecall(
     assign processing = read_valid &&
                         (decode_opcode == SYSTEM_OPCODE) &&
                         (decode_funct3 == PRIV_FUNCT3) &&
-                        ((decode_funct7 == ECALL_FUNCT7) ||
-                         (decode_funct7 == EBREAK_FUNCT7));
+                        ((decode_imm == ECALL_IMM) ||
+                         (decode_imm == EBREAK_IMM) ||
+                         (decode_imm == WFI_IMM));
     assign valid = processing;
 
     assign exception_valid_out = processing;
-    assign exception_num_out = (decode_funct7 == ECALL_FUNCT7) ?
+    assign exception_num_out = (decode_imm == ECALL_IMM) ?
                                     EXCEPTION_ECALL_M :
-                               (decode_funct7 == EBREAK_FUNCT7) ?
+                               (decode_imm == EBREAK_IMM) ?
                                     EXCEPTION_EBREAK :
                                     'd0;
 
