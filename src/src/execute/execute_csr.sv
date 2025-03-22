@@ -14,15 +14,13 @@ module execute_csr(
     input var [31:0]read_rs1_val,
     input read_valid,
 
-    // AXI4-LITE CSR Read-only bus
-    //output axil_csr_aresetn,
-    output [11:0]axil_csr_araddr,
-    output axil_csr_arvalid,
-    input axil_csr_arready,
-    input [31:0]axil_csr_rdata,
-    input [1:0]axil_csr_rresp,
-    input axil_csr_rvalid,
-    output axil_csr_rready,
+    // CSR Read-only bus
+    output [11:0]csrbus_araddr,
+    output csrbus_arvalid,
+
+    input [31:0]csrbus_rdata,
+    input [1:0]csrbus_rresp,
+    input csrbus_rvalid,
 
     output [11:0]csr_write_addr,
     output [31:0]csr_write_val,
@@ -50,7 +48,6 @@ module execute_csr(
 
     enum int unsigned {
         WAIT_OP,
-        WAIT_READ_ADDR,
         WAIT_READ
     } state, next_state;
 
@@ -63,11 +60,6 @@ module execute_csr(
                          (decode_funct3 == CSRRCI_FUNCT3));
 
     // Read-Modify-Write op
-    wire rmw_funct3 = (decode_funct3 == CSRRS_FUNCT3) ||
-                      (decode_funct3 == CSRRC_FUNCT3) ||
-                      (decode_funct3 == CSRRSI_FUNCT3) ||
-                      (decode_funct3 == CSRRCI_FUNCT3);
-
     wire do_read = (decode_rd != 0) ||
                    ((decode_funct3 == CSRRS_FUNCT3) ||
                     (decode_funct3 == CSRRC_FUNCT3) ||
@@ -79,7 +71,7 @@ module execute_csr(
                          (state != WAIT_OP));
     assign valid = (!flush) &&
                    ((read_valid && known_opcode && (!do_read)) ||
-                    (state == WAIT_READ) && (axil_csr_rvalid));
+                    (state == WAIT_READ) && (csrbus_rvalid));
 
     always_ff @(posedge clk) begin
         if (reset == 'd1) begin
@@ -94,30 +86,23 @@ module execute_csr(
             next_state = WAIT_OP;
         else if (state == WAIT_OP)
             if (read_valid && known_opcode && do_read)
-                next_state = WAIT_READ_ADDR;
-            else 
-                next_state = state;
-        else if (state == WAIT_READ_ADDR)
-            if (axil_csr_arready)
                 next_state = WAIT_READ;
             else 
                 next_state = state;
         else // (state == WAIT_READ)
-            if (axil_csr_rvalid)
+            if (csrbus_rvalid)
                 next_state = WAIT_OP;
             else 
                 next_state = state;
     end
 
-    // Read Address AXI4-Lite
-    assign axil_csr_arvalid = (!flush) && (state == WAIT_READ_ADDR);
-    assign axil_csr_araddr = decode_imm[11:0];
+    // Read Value CsrBus
+    assign csrbus_arvalid = (!flush) && (state == WAIT_READ);
+    assign csrbus_araddr = decode_imm[11:0];
 
-    // Read Value AXI4-Lite
-    assign axil_csr_rready = (!flush) && (state == WAIT_READ);
-    assign rd_val_out = (state == WAIT_READ) ? axil_csr_rdata :
+    assign rd_val_out = (state == WAIT_READ) ? csrbus_rdata :
                         'h040c0de0;
-    assign exception_valid_out = (!flush) && (state == WAIT_READ) && axil_csr_rvalid && (axil_csr_rresp != 0);
+    assign exception_valid_out = (!flush) && (state == WAIT_READ) && csrbus_rvalid && (csrbus_rresp != 0);
     assign exception_num_out = exception_valid_out ? EXCEPTION_ILLEGAL_INST : 'd0;
 
     // CSR Write State
@@ -133,10 +118,10 @@ module execute_csr(
             case (decode_funct3)
             CSRRW_FUNCT3: csr_write_val = read_rs1_val;
             CSRRWI_FUNCT3: csr_write_val = {27'b0, decode_rs1};
-            CSRRS_FUNCT3: csr_write_val = axil_csr_rdata | read_rs1_val;
-            CSRRSI_FUNCT3: csr_write_val = axil_csr_rdata | {27'b0, decode_rs1};
-            CSRRC_FUNCT3: csr_write_val = axil_csr_rdata & (~read_rs1_val);
-            CSRRCI_FUNCT3: csr_write_val = axil_csr_rdata & (~{27'b0, decode_rs1});
+            CSRRS_FUNCT3: csr_write_val = csrbus_rdata | read_rs1_val;
+            CSRRSI_FUNCT3: csr_write_val = csrbus_rdata | {27'b0, decode_rs1};
+            CSRRC_FUNCT3: csr_write_val = csrbus_rdata & (~read_rs1_val);
+            CSRRCI_FUNCT3: csr_write_val = csrbus_rdata & (~{27'b0, decode_rs1});
             default: csr_write_val = 'h042c0de;
             endcase
         end

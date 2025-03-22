@@ -191,9 +191,8 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
     clk();
 
     // In WADDR
@@ -204,45 +203,21 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 1);
-    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 1);
+    ASSERT_EQ(mod->csrbus_waddr, 0x987);
+    ASSERT_EQ(mod->csrbus_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 
-    mod->axil_csr_awready = 1;
+    mod->csrbus_wready = 1;
     eval();
     // No Change
-    ASSERT_EQ(mod->axil_csr_awvalid, 1);
-    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 1);
+    ASSERT_EQ(mod->csrbus_waddr, 0x987);
+    ASSERT_EQ(mod->csrbus_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 
     clk();
-    mod->axil_csr_awready = 0;
-    eval();
-    // In WDATA
-    ASSERT_EQ(mod->commit_valid, 0);
-    ASSERT_EQ(mod->execute_stall, 1);
-    ASSERT_EQ(mod->pipeline_flush, 0);
-    ASSERT_EQ(mod->rd_valid_out, 0);
-    ASSERT_EQ(mod->datafifo_valid_out, 0);
-    ASSERT_EQ(mod->exception_valid_out, 0);
-
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 1);
-    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
-
-    mod->axil_csr_wready = 1;
-    eval();
-    // No Change
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 1);
-    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
-
-    clk();
-    mod->axil_csr_wready = 0;
+    mod->csrbus_wready = 0;
     eval();
     // In BRESP
     ASSERT_EQ(mod->commit_valid, 0);
@@ -252,12 +227,11 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 1);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 1);
 
-    mod->axil_csr_bvalid = 1;
-    mod->axil_csr_bresp = 0;
+    mod->csrbus_bvalid = 1;
+    mod->csrbus_bresp = 0;
     eval();
     // No Change
     ASSERT_EQ(mod->commit_valid, 0);
@@ -267,13 +241,12 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 1);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 1);
 
     clk();
-    mod->axil_csr_bvalid = 0;
-    mod->axil_csr_bresp = 0;
+    mod->csrbus_bvalid = 0;
+    mod->csrbus_bresp = 0;
     eval();
     // In CSR_COMMIT
     ASSERT_EQ(mod->commit_valid, 1);
@@ -285,9 +258,8 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 
     clk();
     ASSERT_EQ(mod->commit_valid, 0);
@@ -296,9 +268,8 @@ TEST_F(CommitTest, CsrWrite) {
     ASSERT_EQ(mod->rd_valid_out, 0);
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 }
 
 TEST_F(CommitTest, CsrWriteException) {
@@ -332,9 +303,8 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
     clk();
 
     // In WADDR
@@ -345,53 +315,25 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 1);
-    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 1);
+    ASSERT_EQ(mod->csrbus_waddr, 0x987);
+    ASSERT_EQ(mod->csrbus_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->csrbus_bready, 0);
     clk();
     clk();
     clk();
     clk();
 
-    mod->axil_csr_awready = 1;
+    mod->csrbus_wready = 1;
     eval();
     // No Change
-    ASSERT_EQ(mod->axil_csr_awvalid, 1);
-    ASSERT_EQ(mod->axil_csr_awaddr, 0x987);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 1);
+    ASSERT_EQ(mod->csrbus_waddr, 0x987);
+    ASSERT_EQ(mod->csrbus_wdata, 0xAABBCDEF);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 
     clk();
-    mod->axil_csr_awready = 0;
-    eval();
-    // In WDATA
-    ASSERT_EQ(mod->commit_valid, 0);
-    ASSERT_EQ(mod->execute_stall, 1);
-    ASSERT_EQ(mod->pipeline_flush, 0);
-    ASSERT_EQ(mod->rd_valid_out, 0);
-    ASSERT_EQ(mod->datafifo_valid_out, 0);
-    ASSERT_EQ(mod->exception_valid_out, 0);
-
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 1);
-    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
-    clk();
-    clk();
-    clk();
-    clk();
-
-    mod->axil_csr_wready = 1;
-    eval();
-    // No Change
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 1);
-    ASSERT_EQ(mod->axil_csr_wdata, 0xAABBCDEF);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
-
-    clk();
-    mod->axil_csr_wready = 0;
+    mod->csrbus_wready = 0;
     eval();
     // In BRESP
     ASSERT_EQ(mod->commit_valid, 0);
@@ -401,15 +343,14 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 1);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 1);
     clk();
     clk();
     clk();
 
-    mod->axil_csr_bvalid = 1;
-    mod->axil_csr_bresp = 3;
+    mod->csrbus_bvalid = 1;
+    mod->csrbus_bresp = 3;
     eval();
     // No Change
     ASSERT_EQ(mod->commit_valid, 0);
@@ -419,13 +360,12 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 1);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 1);
 
     clk();
-    mod->axil_csr_bvalid = 0;
-    mod->axil_csr_bresp = 0;
+    mod->csrbus_bvalid = 0;
+    mod->csrbus_bresp = 0;
     eval();
     // In CSR_COMMIT
     ASSERT_EQ(mod->commit_valid, 1);
@@ -436,9 +376,8 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->exception_valid_out, 1);
     ASSERT_EQ(mod->exception_num_out, 2);
 
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 
     clk();
     ASSERT_EQ(mod->commit_valid, 0);
@@ -447,9 +386,8 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->rd_valid_out, 0);
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
-    ASSERT_EQ(mod->axil_csr_awvalid, 0);
-    ASSERT_EQ(mod->axil_csr_wvalid, 0);
-    ASSERT_EQ(mod->axil_csr_bready, 0);
+    ASSERT_EQ(mod->csrbus_wvalid, 0);
+    ASSERT_EQ(mod->csrbus_bready, 0);
 }
 
 TEST_F(CommitTest, Exception) {

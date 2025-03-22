@@ -126,74 +126,52 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
         }
     }
 
-    int m_axil_write_addr;
-    int m_axil_write_resp;
-    int m_axil_read_addr;
+    int m_csrbus_write_resp;
+    int m_csrbus_read_addr;
     void handle_csr_bus(void) {
 
         // Clear all signals
-        mod->axil_csr_awready = 0;
-        mod->axil_csr_wready = 0;
-        mod->axil_csr_bresp = 0;
-        mod->axil_csr_bvalid = 0;
-        mod->axil_csr_arready = 0;
-        mod->axil_csr_rdata = 0;
-        mod->axil_csr_rresp = 3;
+        mod->csrbus_wready = 0;
+        mod->csrbus_bresp = 0;
+        mod->csrbus_bvalid = 0;
+        mod->csrbus_rdata = 0;
+        mod->csrbus_rresp = 3;
 
         // Prioritize Writes over reads to make forward progress
-        if (mod->axil_csr_awvalid || 
-            mod->axil_csr_wvalid ||
-            mod->axil_csr_bready) {
-            ASSERT_EQ(mod->axil_csr_awvalid +
-                      mod->axil_csr_wvalid +
-                      mod->axil_csr_bready, 1);
-            if (mod->axil_csr_awvalid) {
-                m_axil_write_addr = mod->axil_csr_awaddr;
-                mod->axil_csr_awready = 1;
+        if (mod->csrbus_wvalid ||
+            mod->csrbus_bready) {
+            ASSERT_EQ(mod->csrbus_wvalid +
+                      mod->csrbus_bready, 1);
+            if (mod->csrbus_wvalid) {
+                auto ok = write_csr(mod->csrbus_waddr,
+                                    mod->csrbus_wdata);
+                m_csrbus_write_resp = ok ? 0 : 3;
+                mod->csrbus_wready = 1;
             } else {
-                mod->axil_csr_awready = 0;
+                mod->csrbus_wready = 0;
             }
-            if (mod->axil_csr_wvalid) {
-                auto ok = write_csr(m_axil_write_addr,
-                                    mod->axil_csr_wdata);
-                m_axil_write_resp = ok ? 0 : 3;
-                mod->axil_csr_wready = 1;
+            if (mod->csrbus_bready) {
+                mod->csrbus_bresp = m_csrbus_write_resp;
+                mod->csrbus_bvalid = 1;
             } else {
-                mod->axil_csr_wready = 0;
-            }
-            if (mod->axil_csr_bready) {
-                mod->axil_csr_bresp = m_axil_write_resp;
-                mod->axil_csr_bvalid = 1;
-            } else {
-                mod->axil_csr_bresp = 0;
-                mod->axil_csr_bvalid = 0;
+                mod->csrbus_bresp = 0;
+                mod->csrbus_bvalid = 0;
             }
 
-        } else if (mod->axil_csr_arvalid ||
-                   mod->axil_csr_rready) {
-            ASSERT_EQ(mod->axil_csr_arvalid +
-                      mod->axil_csr_rready, 1);
-            if (mod->axil_csr_arvalid) {
-                m_axil_read_addr = mod->axil_csr_araddr;
-                mod->axil_csr_arready = 1;
+        } else if (mod->csrbus_arvalid) {
+            auto read = read_csr(mod->csrbus_araddr);
+            if (read) {
+                mod->csrbus_rdata = *read;
+                mod->csrbus_rresp = 0;
             } else {
-                mod->axil_csr_arready = 0;
+                mod->csrbus_rdata = 0;
+                mod->csrbus_rresp = 3;
             }
-            if (mod->axil_csr_rready) {
-                auto read = read_csr(m_axil_read_addr);
-                if (read) {
-                    mod->axil_csr_rdata = *read;
-                    mod->axil_csr_rresp = 0;
-                } else {
-                    mod->axil_csr_rdata = 0;
-                    mod->axil_csr_rresp = 3;
-                }
-                mod->axil_csr_rvalid = 1;
-            } else {
-                mod->axil_csr_rvalid = 0;
-                mod->axil_csr_rdata = 0;
-                mod->axil_csr_rresp = 0;
-            }
+            mod->csrbus_rvalid = 1;
+        } else {
+            mod->csrbus_rvalid = 0;
+            mod->csrbus_rdata = 0;
+            mod->csrbus_rresp = 0;
         }
     }
 

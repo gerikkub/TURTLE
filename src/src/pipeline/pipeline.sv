@@ -34,36 +34,28 @@ module pipeline(
     input mem_data_valid,
     input mem_data_access_fault,
 
-    // Axi-Lite CSR Read bus
-    output [11:0]axil_csr_araddr,
-    output axil_csr_arvalid,
-    input axil_csr_arready,
-    input [31:0]axil_csr_rdata,
-    input [1:0]axil_csr_rresp,
-    input axil_csr_rvalid,
-    output axil_csr_rready,
+    // CSR Read Bus
+    output [11:0]csrbus_araddr,
+    output csrbus_arvalid,
 
-    // Axi-Lite CSR Write
-    output [11:0]axil_csr_awaddr,
-    output axil_csr_awvalid,
-    input axil_csr_awready,
-    output [31:0]axil_csr_wdata,
-    output axil_csr_wvalid,
-    input axil_csr_wready,
-    input [2:0]axil_csr_bresp,
-    input axil_csr_bvalid,
-    output axil_csr_bready,
-    output axil_csr_areset
+    input [31:0]csrbus_rdata,
+    input [1:0]csrbus_rresp,
+    input csrbus_rvalid,
+
+    // CSR Write Bus
+    output [11:0]csrbus_waddr,
+    output [31:0]csrbus_wdata,
+    output csrbus_wvalid,
+    input csrbus_wready,
+    input [2:0]csrbus_bresp,
+    input csrbus_bvalid,
+    output csrbus_bready
 
     );
 
 
     wire pipeline_flush;
     wire [31:0]commit_jump_pc;
-
-    // Reset the CSR Axi Write bus on a pipeline flush
-    // to stop in transactions in progress
-    assign axil_csr_areset = !pipeline_flush;
 
     wire fetch_jump_pc = pipeline_flush;
     wire [31:0]fetch_jump_pc_addr = commit_jump_pc;
@@ -250,13 +242,11 @@ module pipeline(
         .mem_data_in(mem_data_in),
         .mem_data_valid(mem_data_valid),
         .mem_data_access_fault(mem_data_access_fault),
-        .axil_csr_araddr(axil_csr_araddr),
-        .axil_csr_arvalid(axil_csr_arvalid),
-        .axil_csr_arready(axil_csr_arready),
-        .axil_csr_rdata(axil_csr_rdata),
-        .axil_csr_rresp(axil_csr_rresp),
-        .axil_csr_rvalid(axil_csr_rvalid),
-        .axil_csr_rready(axil_csr_rready),
+        .csrbus_araddr(csrbus_araddr),
+        .csrbus_arvalid(csrbus_arvalid),
+        .csrbus_rdata(csrbus_rdata),
+        .csrbus_rresp(csrbus_rresp),
+        .csrbus_rvalid(csrbus_rvalid),
         .valid(execute_valid),
         .processing(execute_processing),
         .processing_rd(execute_active_rd),
@@ -322,15 +312,13 @@ module pipeline(
         .pipeline_flush(pipeline_flush),
         .pipeline_pc(commit_jump_pc),
         .active_rd(commit_active_rd),
-        .axil_csr_awaddr(axil_csr_awaddr),
-        .axil_csr_awvalid(axil_csr_awvalid),
-        .axil_csr_awready(axil_csr_awready),
-        .axil_csr_wdata(axil_csr_wdata),
-        .axil_csr_wvalid(axil_csr_wvalid),
-        .axil_csr_wready(axil_csr_wready),
-        .axil_csr_bresp(axil_csr_bresp),
-        .axil_csr_bvalid(axil_csr_bvalid),
-        .axil_csr_bready(axil_csr_bready));
+        .csrbus_waddr(csrbus_waddr),
+        .csrbus_wdata(csrbus_wdata),
+        .csrbus_wvalid(csrbus_wvalid),
+        .csrbus_wready(csrbus_wready),
+        .csrbus_bresp(csrbus_bresp),
+        .csrbus_bvalid(csrbus_bvalid),
+        .csrbus_bready(csrbus_bready));
 
 
 endmodule

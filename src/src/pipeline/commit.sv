@@ -57,15 +57,13 @@ module commit(
 
     // Axi-Lite CSR Write
     // Note: This could probably be a simpler bus
-    output [11:0]axil_csr_awaddr,
-    output axil_csr_awvalid,
-    input axil_csr_awready,
-    output [31:0]axil_csr_wdata,
-    output axil_csr_wvalid,
-    input axil_csr_wready,
-    input [2:0]axil_csr_bresp,
-    input axil_csr_bvalid,
-    output axil_csr_bready
+    output [11:0]csrbus_waddr,
+    output [31:0]csrbus_wdata,
+    output csrbus_wvalid,
+    input csrbus_wready,
+    input [2:0]csrbus_bresp,
+    input csrbus_bvalid,
+    output csrbus_bready
 
 
     // TODO: Exceptions
@@ -217,8 +215,7 @@ module commit(
     assign active_rd = (commit_kind != WAIT_CSRW) ? 'd0 :
                        (cw_state != CSR_COMMIT) ? rd_decode : 'd0;
 
-    // Axi-Lite CSW Write SM
-
+    // Axi-Lite like CSW Write SM
     localparam EXCEPTION_INVALID_INST = 'd2;
 
     wire csr_write_complete;
@@ -231,21 +228,18 @@ module commit(
 
     enum int unsigned {
         IDLE,
-        WADDR,
-        WDATA,
+        WRITE,
         BRESP,
         CSR_COMMIT
     } cw_state, cw_next_state;
 
     assign csr_write_complete = cw_state == CSR_COMMIT;
 
-    assign axil_csr_awaddr = csr_write_addr_in;
-    assign axil_csr_awvalid = cw_state == WADDR;
+    assign csrbus_waddr = csr_write_addr_in;
+    assign csrbus_wdata = csr_write_val_in;
+    assign csrbus_wvalid = cw_state == WRITE;
 
-    assign axil_csr_wdata = csr_write_val_in;
-    assign axil_csr_wvalid = cw_state == WDATA;
-
-    assign axil_csr_bready = cw_state == BRESP;
+    assign csrbus_bready = cw_state == BRESP;
 
     // Buffer BRESP exception valid for a cycle
     always_ff @(posedge clk) begin
@@ -253,7 +247,7 @@ module commit(
             csr_write_exception_buffer <= 'd0;
         else
             if (cw_state == BRESP)
-                csr_write_exception_buffer <= axil_csr_bvalid && (axil_csr_bresp != 'd0);
+                csr_write_exception_buffer <= csrbus_bvalid && (csrbus_bresp != 'd0);
             else
                 csr_write_exception_buffer <= 'd0;
     end
@@ -261,21 +255,16 @@ module commit(
     always_comb begin
         if (cw_state == IDLE)
             if (commit_kind == WAIT_CSRW)
-                cw_next_state = WADDR;
+                cw_next_state = WRITE;
             else
                 cw_next_state = IDLE;
-        else if(cw_state == WADDR)
-            if (axil_csr_awready == 'd1)
-                cw_next_state = WDATA;
-            else
-                cw_next_state = WADDR;
-        else if (cw_state == WDATA)
-            if (axil_csr_wready == 'd1)
+        else if(cw_state == WRITE)
+            if (csrbus_wready == 'd1)
                 cw_next_state = BRESP;
             else
-                cw_next_state = WDATA;
+                cw_next_state = WRITE;
         else if(cw_state == BRESP)
-            if (axil_csr_bvalid == 'd1)
+            if (csrbus_bvalid == 'd1)
                 cw_next_state = CSR_COMMIT;
             else
                 cw_next_state = BRESP;

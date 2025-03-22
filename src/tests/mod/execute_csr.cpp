@@ -9,8 +9,7 @@ TEST_F(ExecuteCsrTest, Reset) {
 
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 }
@@ -30,8 +29,7 @@ TEST_F(ExecuteCsrTest, WriteOnly) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -44,8 +42,7 @@ TEST_F(ExecuteCsrTest, WriteOnly) {
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
     ASSERT_EQ(mod->csr_write_val, 0x11223456);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 }
 
@@ -63,8 +60,7 @@ TEST_F(ExecuteCsrTest, ReadOnly) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -72,8 +68,7 @@ TEST_F(ExecuteCsrTest, ReadOnly) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -81,58 +76,31 @@ TEST_F(ExecuteCsrTest, ReadOnly) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    // Note: Nothing should change until clk
-    mod->axil_csr_arready = 1;
-    eval();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, ReadWrite) {
@@ -149,8 +117,7 @@ TEST_F(ExecuteCsrTest, ReadWrite) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -158,8 +125,7 @@ TEST_F(ExecuteCsrTest, ReadWrite) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -167,27 +133,21 @@ TEST_F(ExecuteCsrTest, ReadWrite) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -196,8 +156,7 @@ TEST_F(ExecuteCsrTest, ReadWrite) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, Set) {
@@ -214,8 +173,7 @@ TEST_F(ExecuteCsrTest, Set) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -223,8 +181,7 @@ TEST_F(ExecuteCsrTest, Set) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -232,27 +189,17 @@ TEST_F(ExecuteCsrTest, Set) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -261,8 +208,7 @@ TEST_F(ExecuteCsrTest, Set) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, Clear) {
@@ -279,8 +225,7 @@ TEST_F(ExecuteCsrTest, Clear) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -288,8 +233,7 @@ TEST_F(ExecuteCsrTest, Clear) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -297,27 +241,21 @@ TEST_F(ExecuteCsrTest, Clear) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -326,8 +264,7 @@ TEST_F(ExecuteCsrTest, Clear) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, ReadWriteImm) {
@@ -344,8 +281,7 @@ TEST_F(ExecuteCsrTest, ReadWriteImm) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -353,8 +289,7 @@ TEST_F(ExecuteCsrTest, ReadWriteImm) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -362,27 +297,21 @@ TEST_F(ExecuteCsrTest, ReadWriteImm) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -391,8 +320,7 @@ TEST_F(ExecuteCsrTest, ReadWriteImm) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, SetImm) {
@@ -409,8 +337,7 @@ TEST_F(ExecuteCsrTest, SetImm) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -418,8 +345,7 @@ TEST_F(ExecuteCsrTest, SetImm) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -427,27 +353,21 @@ TEST_F(ExecuteCsrTest, SetImm) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -456,8 +376,7 @@ TEST_F(ExecuteCsrTest, SetImm) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, SetImmZero) {
@@ -474,8 +393,7 @@ TEST_F(ExecuteCsrTest, SetImmZero) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -483,8 +401,7 @@ TEST_F(ExecuteCsrTest, SetImmZero) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -492,35 +409,28 @@ TEST_F(ExecuteCsrTest, SetImmZero) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, ClearImm) {
@@ -537,8 +447,7 @@ TEST_F(ExecuteCsrTest, ClearImm) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -546,8 +455,7 @@ TEST_F(ExecuteCsrTest, ClearImm) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -555,27 +463,21 @@ TEST_F(ExecuteCsrTest, ClearImm) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 1);
     ASSERT_EQ(mod->csr_write_addr, 0xABC);
@@ -584,8 +486,7 @@ TEST_F(ExecuteCsrTest, ClearImm) {
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, ClearImmZero) {
@@ -602,8 +503,7 @@ TEST_F(ExecuteCsrTest, ClearImmZero) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -611,8 +511,7 @@ TEST_F(ExecuteCsrTest, ClearImmZero) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -620,35 +519,28 @@ TEST_F(ExecuteCsrTest, ClearImmZero) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 1;
     clk();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->axil_csr_rdata = 0x98776654;
-    mod->axil_csr_rresp = 0;
-    mod->axil_csr_rvalid = 1;
+    mod->csrbus_rdata = 0x98776654;
+    mod->csrbus_rresp = 0;
+    mod->csrbus_rvalid = 1;
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 1);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
     ASSERT_EQ(mod->rd_val_out, 0x98776654);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_valid_out, 0);
     clk();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 TEST_F(ExecuteCsrTest, ReadWriteFlush) {
@@ -666,8 +558,7 @@ TEST_F(ExecuteCsrTest, ReadWriteFlush) {
     eval();
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
     ASSERT_EQ(mod->csr_write_valid, 0);
     ASSERT_EQ(mod->exception_num_out, 0);
 
@@ -675,8 +566,7 @@ TEST_F(ExecuteCsrTest, ReadWriteFlush) {
     eval();
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->read_valid = 0;
@@ -684,27 +574,23 @@ TEST_F(ExecuteCsrTest, ReadWriteFlush) {
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
-    mod->axil_csr_arready = 0;
     clk();
 
     ASSERT_EQ(mod->processing, 1);
     ASSERT_EQ(mod->valid, 0);
 
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 1);
+    ASSERT_EQ(mod->csrbus_araddr, 0xABC);
 
     mod->flush = 1;
     eval();
 
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 
     clk();
     mod->flush = 0;
@@ -712,75 +598,7 @@ TEST_F(ExecuteCsrTest, ReadWriteFlush) {
 
     ASSERT_EQ(mod->processing, 0);
     ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-
-    // Flush during Read
-    mod->decode_opcode = 0b1110011;
-    mod->decode_funct3 = 0b001;
-    mod->decode_rd = 1;
-    mod->decode_rs1 = 2;
-    mod->decode_imm = 0xABC;
-
-    mod->read_rs1_val = 0xAABBCDEF;
-    mod->read_valid = 0;
-    eval();
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-    ASSERT_EQ(mod->csr_write_valid, 0);
-    ASSERT_EQ(mod->exception_num_out, 0);
-
-    mod->read_valid = 1;
-    eval();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-
-    clk();
-    mod->read_valid = 0;
-    eval();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 1);
-    ASSERT_EQ(mod->axil_csr_araddr, 0xABC);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-
-    mod->axil_csr_arready = 1;
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    clk();
-    ASSERT_EQ(mod->processing, 1);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 1);
-
-    mod->flush = 1;
-    eval();
-
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
-
-    clk();
-    mod->flush = 0;
-    eval();
-
-    ASSERT_EQ(mod->processing, 0);
-    ASSERT_EQ(mod->valid, 0);
-    ASSERT_EQ(mod->axil_csr_arvalid, 0);
-    ASSERT_EQ(mod->axil_csr_rready, 0);
+    ASSERT_EQ(mod->csrbus_arvalid, 0);
 }
 
 

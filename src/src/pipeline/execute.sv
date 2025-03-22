@@ -42,13 +42,13 @@ module execute(
     input mem_data_valid,
     input mem_data_access_fault,
 
-    output [11:0]axil_csr_araddr,
-    output axil_csr_arvalid,
-    input axil_csr_arready,
-    input [31:0]axil_csr_rdata,
-    input [1:0]axil_csr_rresp,
-    input axil_csr_rvalid,
-    output axil_csr_rready,
+    // CSR Read-only bus
+    output [11:0]csrbus_araddr,
+    output csrbus_arvalid,
+
+    input [31:0]csrbus_rdata,
+    input [1:0]csrbus_rresp,
+    input csrbus_rvalid,
 
     output valid,
     output processing,
@@ -66,6 +66,7 @@ module execute(
     output [31:0]store_val_out,
     output [1:0]store_size_out,
     output store_valid_out,
+
     output [11:0]csr_write_addr_out,
     output [31:0]csr_write_val_out,
     output csr_write_valid_out
@@ -585,13 +586,11 @@ module execute(
         .decode_imm(imm_in[11:0]),
         .read_rs1_val(rs1_val_in),
         .read_valid(first_cycle),
-        .axil_csr_araddr(axil_csr_araddr),
-        .axil_csr_arvalid(axil_csr_arvalid),
-        .axil_csr_arready(axil_csr_arready),
-        .axil_csr_rdata(axil_csr_rdata),
-        .axil_csr_rresp(axil_csr_rresp),
-        .axil_csr_rvalid(axil_csr_rvalid),
-        .axil_csr_rready(axil_csr_rready),
+        .csrbus_araddr(csrbus_araddr),
+        .csrbus_arvalid(csrbus_arvalid),
+        .csrbus_rdata(csrbus_rdata),
+        .csrbus_rresp(csrbus_rresp),
+        .csrbus_rvalid(csrbus_rvalid),
         .csr_write_addr(ex_csr_write_addr_result),
         .csr_write_val(ex_csr_write_val_result),
         .csr_write_valid(ex_csr_write_valid_result),
