@@ -26,8 +26,10 @@ std::tuple<uint8_t*,std::size_t> bin_from_asm(const std::string_view& s, const u
     asmf << std::format(".org {}\n", addr);
     asmf << s;
     asmf.close();
+    const auto gas_args = "-march=rv32ezicsr -mno-relax -mno-csr-check -mlittle-endian";
 
-    std::system(std::format("riscv32-unknown-elf-as {}/test.s -o {}/test.o",
+    std::system(std::format("riscv32-unknown-elf-as {} {}/test.s -o {}/test.o",
+                gas_args,
                 tmp_dir.string(), tmp_dir.string()).c_str());
     std::system(std::format("riscv32-unknown-elf-objcopy -O binary {}/test.o {}/test.bin",
                 tmp_dir.string(), tmp_dir.string()).c_str());

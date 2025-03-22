@@ -8,6 +8,33 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
 
     public:
 
+    PipelineTest() : ClockedModTest<Vpipeline>() {
+        m_csr_ro_mem[MVENDORID] = 0xABCD8899;
+        m_csr_ro_mem[MARCHID] = 0x09876543;
+        m_csr_ro_mem[MIMPID] = 1;
+        m_csr_ro_mem[MHARDIT] = 0;
+        m_csr_ro_mem[MCONFIGPTR] = 0;
+        m_csr_ro_mem[MISA] = (1 << 30) | // 32-bit
+                             (1 << 4); // RV32E
+
+        m_csr_rw_mem[MSTATUS] = 0;
+        m_csr_rw_mem[MEDELEG] = 0;
+        m_csr_rw_mem[MIDELEG] = 0;
+        m_csr_rw_mem[MIE] = 0;
+        // Exception vector at 0x400 by default
+        m_csr_rw_mem[MTVEC] = 0x400;
+        m_csr_rw_mem[MCOUNTEREN] = 0;
+        m_csr_rw_mem[MSTATUSH] = 0;
+        m_csr_rw_mem[MEDELEGH] = 0;
+
+        m_csr_rw_mem[MSCRATCH] = 0;
+        m_csr_rw_mem[MEPC] = 0;
+        m_csr_rw_mem[MCAUSE] = 0;
+        m_csr_rw_mem[MTVAL] = 0;
+        m_csr_rw_mem[MIP] = 0;
+        m_csr_rw_mem[MTINST] = 0;
+        m_csr_rw_mem[MTVAL2] = 0;
+    }
 
     void simulate(int clks) {
 
@@ -25,6 +52,7 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
             handle_inst_bus();
             handle_data_bus();
             handle_csr_bus();
+            handle_csr_update();
 
             clk();
             m_cycle_count++;
@@ -34,6 +62,34 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
     }
 
     private:
+
+    enum CsrRORegister : uint32_t {
+        MISA = 0x301,
+        MVENDORID = 0xF11,
+        MARCHID = 0xF12,
+        MIMPID = 0xF13,
+        MHARDIT = 0xF14,
+        MCONFIGPTR = 0xF15,
+    };
+
+    enum CsrRWRegister : uint32_t {
+        MSTATUS = 0x300,
+        MEDELEG = 0x302,
+        MIDELEG = 0x303,
+        MIE = 0x304,
+        MTVEC = 0x305,
+        MCOUNTEREN = 0x306,
+        MSTATUSH = 0x310,
+        MEDELEGH = 0x312,
+
+        MSCRATCH = 0x340,
+        MEPC = 0x341,
+        MCAUSE = 0x342,
+        MTVAL = 0x343,
+        MIP = 0x344,
+        MTINST = 0x34A,
+        MTVAL2 = 0x34B,
+    };
 
     void handle_inst_bus(void) {
         if (mod->mem_fetch_addr_en) {
@@ -175,13 +231,30 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
         }
     }
 
+    void handle_csr_update() {
+        if (mod->exception_valid_out) {
+            m_csr_rw_mem[MEPC] = mod->exception_mepc_out;
+            m_csr_rw_mem[MCAUSE] = mod->exception_mcause_out;
+            m_csr_rw_mem[MTVAL] = mod->exception_mtval_out;
+        }
+
+        mod->exception_mtvec_base_in = m_csr_rw_mem[MTVEC] >> 2;
+        mod->exception_mepc_in = m_csr_rw_mem[MEPC];
+    }
+
     std::optional<uint32_t> read_csr(const uint32_t addr) {
-        return m_csr_mem[addr];
+        return m_csr_ro_mem.contains(addr) ? std::optional(m_csr_ro_mem[addr]) :
+               m_csr_rw_mem.contains(addr) ? std::optional(m_csr_rw_mem[addr]) :
+                                             std::nullopt;
     }
 
     bool write_csr(const uint32_t addr, const uint32_t val) {
-        m_csr_mem[addr] = val;
-        return true;
+        if (m_csr_rw_mem.contains(addr)) {
+            m_csr_rw_mem[addr] = val;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     std::optional<MemoryMap> get_map(const uint32_t addr) {
@@ -220,7 +293,8 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
 
     int m_cycle_count;
 
-    std::array<uint32_t, 4096> m_csr_mem;
+    std::map<uint32_t, uint32_t> m_csr_rw_mem;
+    std::map<uint32_t, uint32_t> m_csr_ro_mem;
 
 };
 
@@ -406,5 +480,66 @@ TEST_F(PipelineTest, CsrBus) {
         sw x5,0(x4)\n");
 
     simulate(100);
+}
+
+TEST_F(PipelineTest, ExceptionECall) {
+    reset();
+
+    memory_map_from_asm(" \
+        _start: \n\
+        add x0, x0, x0 \n\
+        ecall \n\
+\
+        loop: \n\
+        jal x0, loop \n\
+\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4) \n\
+\
+        .org 0x400 \n\
+        exp: \n\
+        csrrw x1, mepc, x0 \n\
+        add x2, x0, 0x4 \n\
+        bne x1, x2, loop \n\
+        csrrw x1, mcause, x0 \n\
+        add x2, x0, 11 \n\
+        bne x1, x2, loop \n\
+        jal x0, done \n\
+        ");
+
+    simulate(100);
+}
+
+TEST_F(PipelineTest, ExceptionReturn) {
+    reset();
+
+    memory_map_from_asm(" \
+        _start: \n\
+        add x1, x0, x0 \n\
+        ecall \n\
+        addi x2, x0, 1 \n\
+        beq x1, x2, done \n\
+\
+        loop: \n\
+        jal x0, loop \n\
+\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4) \n\
+\
+        .org 0x400 \n\
+        exp: \n\
+        addi x1, x1, 1\n\
+        csrrw x3, mepc, x0\n\
+        addi x3, x3, 4\n\
+        csrrw x0, mepc, x3\n\
+        mret \n\
+        ");
+
+    simulate(100);
+
 }
 

@@ -62,6 +62,7 @@ module execute(
     output [5:0]exception_num_out,
     output [31:0]exception_val_out,
     output exception_valid_out,
+    output exception_return_valid_out,
     output [31:0]store_addr_out,
     output [31:0]store_val_out,
     output [1:0]store_size_out,
@@ -264,7 +265,10 @@ module execute(
                                                           'h017c0de0;
     wire csr_write_valid_result = ex_csr_processing ? ex_csr_write_valid_result : 'd0;
 
-    wire [252:0]hold_in = {csr_write_valid_result,
+    wire exception_return_valid_result = ex_ecall_processing ? ex_ecall_exception_return_valid_result : 'd0;
+
+    wire [253:0]hold_in = {exception_return_valid_result,
+                           csr_write_valid_result,
                            csr_write_val_result,
                            csr_write_addr_result,
                            store_valid_result,
@@ -280,9 +284,9 @@ module execute(
                            rd_val_result,
                            rd_in};
 
-    wire [252:0]hold_out;
+    wire [253:0]hold_out;
 
-    hold #(253) h0(
+    hold #(254) h0(
         .clk(clk),
         .reset(reset),
         .flush(flush),
@@ -307,6 +311,7 @@ module execute(
     assign csr_write_addr_out = hold_out[219:208];
     assign csr_write_val_out = hold_out[251:220];
     assign csr_write_valid_out = hold_out[252];
+    assign exception_return_valid_out = hold_out[253];
 
     // ALU
     localparam ALU_UNKNOWN = 8;
@@ -552,6 +557,7 @@ module execute(
     wire ex_ecall_valid;
     wire [5:0]ex_ecall_exception_num_result;
     wire ex_ecall_exception_valid_result;
+    wire ex_ecall_exception_return_valid_result;
 
     execute_ecall ex_ecall0(
         .decode_opcode(opcode_in),
@@ -562,7 +568,8 @@ module execute(
         .processing(ex_ecall_processing),
         .valid(ex_ecall_valid),
         .exception_num_out(ex_ecall_exception_num_result),
-        .exception_valid_out(ex_ecall_exception_valid_result));
+        .exception_valid_out(ex_ecall_exception_valid_result),
+        .exception_return_valid_out(ex_ecall_exception_return_valid_result));
 
     // CSR execution unit
     wire ex_csr_processing;

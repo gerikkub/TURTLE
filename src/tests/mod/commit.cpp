@@ -374,7 +374,7 @@ TEST_F(CommitTest, CsrWriteException) {
     ASSERT_EQ(mod->rd_valid_out, 0);
     ASSERT_EQ(mod->datafifo_valid_out, 0);
     ASSERT_EQ(mod->exception_valid_out, 1);
-    ASSERT_EQ(mod->exception_num_out, 2);
+    ASSERT_EQ(mod->exception_mcause_out, 2);
 
     ASSERT_EQ(mod->csrbus_wvalid, 0);
     ASSERT_EQ(mod->csrbus_bready, 0);

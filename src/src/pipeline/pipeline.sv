@@ -49,8 +49,16 @@ module pipeline(
     input csrbus_wready,
     input [2:0]csrbus_bresp,
     input csrbus_bvalid,
-    output csrbus_bready
+    output csrbus_bready,
 
+    // Exception Handling
+    input [29:0]exception_mtvec_base_in,
+    input [31:0]exception_mepc_in,
+
+    output exception_valid_out,
+    output [31:0]exception_mepc_out,
+    output [31:0]exception_mcause_out,
+    output [31:0]exception_mtval_out
     );
 
 
@@ -210,6 +218,7 @@ module pipeline(
     wire [5:0]execute_exception_num;
     wire [31:0]execute_exception_val;
     wire execute_exception_valid;
+    wire execute_exception_return_valid;
     wire [31:0]execute_store_addr;
     wire [31:0]execute_store_val;
     wire [1:0]execute_store_size;
@@ -259,6 +268,7 @@ module pipeline(
         .exception_num_out(execute_exception_num),
         .exception_val_out(execute_exception_val),
         .exception_valid_out(execute_exception_valid),
+        .exception_return_valid_out(execute_exception_return_valid),
         .store_addr_out(execute_store_addr),
         .store_val_out(execute_store_val),
         .store_size_out(execute_store_size),
@@ -271,10 +281,6 @@ module pipeline(
 
     wire commit_valid;
     wire [31:0]commit_active_rd;
-    wire [5:0]commit_exception_num;
-    wire [31:0]commit_exception_val;
-    wire [31:0]commit_exception_pc;
-    wire commit_exception_valid;
 
     commit commit0(
         .clk(clk),
@@ -288,6 +294,7 @@ module pipeline(
         .execute_exception_num(execute_exception_num),
         .execute_exception_val(execute_exception_val),
         .execute_exception_valid(execute_exception_valid),
+        .execute_exception_return_valid(execute_exception_return_valid),
         .execute_store_addr(execute_store_addr),
         .execute_store_val(execute_store_val),
         .execute_store_size(execute_store_size),
@@ -300,10 +307,6 @@ module pipeline(
         .datafifo_val_out(datafifo_val_out),
         .datafifo_size_out(datafifo_size_out),
         .datafifo_valid_out(datafifo_valid_out),
-        .exception_num_out(commit_exception_num),
-        .exception_val_out(commit_exception_val),
-        .exception_pc_out(commit_exception_pc),
-        .exception_valid_out(commit_exception_valid),
         .rd_out(rf_write_rd),
         .rd_val_out(rf_write_val),
         .rd_valid_out(rf_write_valid),
@@ -318,7 +321,13 @@ module pipeline(
         .csrbus_wready(csrbus_wready),
         .csrbus_bresp(csrbus_bresp),
         .csrbus_bvalid(csrbus_bvalid),
-        .csrbus_bready(csrbus_bready));
+        .csrbus_bready(csrbus_bready),
+        .exception_mtvec_base_in(exception_mtvec_base_in),
+        .exception_mepc_in(exception_mepc_in),
+        .exception_valid_out(exception_valid_out),
+        .exception_mepc_out(exception_mepc_out),
+        .exception_mcause_out(exception_mcause_out),
+        .exception_mtval_out(exception_mtval_out));
 
 
 endmodule

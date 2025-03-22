@@ -20,6 +20,9 @@ module commit(
     input [31:0]execute_exception_val,
     input execute_exception_valid,
 
+    // Exception Return
+    input execute_exception_return_valid,
+
     input [31:0]execute_store_addr,
     input [31:0]execute_store_val,
     input [1:0]execute_store_size,
@@ -36,12 +39,6 @@ module commit(
     output [31:0]datafifo_val_out,
     output [1:0]datafifo_size_out,
     output datafifo_valid_out,
-
-    // Exception handling
-    output [5:0]exception_num_out,
-    output [31:0]exception_val_out,
-    output [31:0]exception_pc_out,
-    output exception_valid_out,
 
     // Register Writeback
     output [4:0]rd_out,
@@ -63,10 +60,17 @@ module commit(
     input csrbus_wready,
     input [2:0]csrbus_bresp,
     input csrbus_bvalid,
-    output csrbus_bready
+    output csrbus_bready,
 
+    // Exception handling
+    input [29:0]exception_mtvec_base_in,
+    input [31:0]exception_mepc_in,
 
-    // TODO: Exceptions
+    output exception_valid_out,
+    output [31:0]exception_mepc_out,
+    output [31:0]exception_mcause_out,
+    output [31:0]exception_mtval_out
+
     // TODO: Interrupts
     );
 
@@ -78,6 +82,7 @@ module commit(
     reg [5:0]exception_num_in;
     reg [31:0]exception_val_in;
     reg exception_valid_in;
+    reg exception_return_valid_in;
     reg [31:0]store_addr_in;
     reg [31:0]store_val_in;
     reg [1:0]store_size_in;
@@ -102,6 +107,7 @@ module commit(
             exception_num_in <= 'd0;
             exception_val_in <= 'd0;
             exception_valid_in <= 'd0;
+            exception_return_valid_in <= 'd0;
             store_addr_in <= 'd0;
             store_val_in <= 'd0;
             store_size_in <= 'd0;
@@ -122,6 +128,7 @@ module commit(
                 exception_num_in <= execute_exception_num;
                 exception_val_in <= execute_exception_val;
                 exception_valid_in <= execute_exception_valid;
+                exception_return_valid_in <= execute_exception_return_valid;
                 store_addr_in <= execute_store_addr;
                 store_val_in <= execute_store_val;
                 store_size_in <= execute_store_size;
@@ -138,6 +145,7 @@ module commit(
                 exception_num_in <= exception_num_in;
                 exception_val_in <= exception_val_in;
                 exception_valid_in <= exception_valid_in;
+                exception_return_valid_in <= exception_return_valid_in;
                 store_addr_in <= store_addr_in;
                 store_val_in <= store_val_in;
                 store_size_in <= store_size_in;
@@ -154,6 +162,7 @@ module commit(
                 exception_num_in <= 'd0;
                 exception_val_in <= 'd0;
                 exception_valid_in <= 'd0;
+                exception_return_valid_in <= 'd0;
                 store_addr_in <= 'd0;
                 store_val_in <= 'd0;
                 store_size_in <= 'd0;
@@ -165,15 +174,18 @@ module commit(
         end
     end
 
-    localparam NODATA = 0;
-    localparam COMMIT = 1;
-    localparam EXCEPTION = 2;
-    localparam WAIT_FIFO = 3;
-    localparam WAIT_CSRW = 4;
-    var int commit_kind;
+    enum int {
+        NODATA,
+        COMMIT,
+        EXCEPTION_RETURN,
+        EXCEPTION,
+        WAIT_FIFO,
+        WAIT_CSRW
+    } commit_kind;
 
     assign commit_kind = (!in_valid) ? NODATA :
                          (exception_valid_in) ? EXCEPTION :
+                         (exception_return_valid_in) ? EXCEPTION_RETURN :
                          (store_valid_in && datafifo_full) ? WAIT_FIFO :
                          (csr_write_valid_in) ? WAIT_CSRW : COMMIT;
     assign execute_stall = (commit_kind == WAIT_FIFO) || ((commit_kind == WAIT_CSRW) && (!csr_write_complete));
@@ -190,20 +202,25 @@ module commit(
     assign datafifo_size_out = store_size_in;
     assign datafifo_valid_out = (commit_kind == COMMIT) && store_valid_in;
 
-    assign exception_num_out = (commit_kind == EXCEPTION) ? exception_num_in :
-                               (commit_kind == WAIT_CSRW) ? csr_write_exception_num : 'd0;
-    assign exception_val_out = (commit_kind == EXCEPTION) ? exception_val_in :
-                               (commit_kind == WAIT_CSRW) ? csr_write_exception_val : 'd0;
-    assign exception_pc_out = inst_pc_in;
+    assign exception_mcause_out = (commit_kind == EXCEPTION) ? {26'b0, exception_num_in} :
+                                  (commit_kind == WAIT_CSRW) ? {26'b0, csr_write_exception_num} : 'd0;
+    assign exception_mtval_out = (commit_kind == EXCEPTION) ? exception_val_in :
+                                 (commit_kind == WAIT_CSRW) ? csr_write_exception_val : 'd0;
+    assign exception_mepc_out = inst_pc_in;
     assign exception_valid_out = (commit_kind == EXCEPTION) ? 'd1 :
                                  (commit_kind == WAIT_CSRW) ? csr_write_exception_valid : 'd0;
 
-    assign commit_valid = (commit_kind == EXCEPTION) || (commit_kind == COMMIT) ||
+    assign commit_valid = (commit_kind == EXCEPTION) ||
+                          (commit_kind == COMMIT) ||
+                          (commit_kind == EXCEPTION_RETURN) ||
                           ((commit_kind == WAIT_CSRW) && csr_write_complete);
     assign pipeline_flush = (commit_kind == EXCEPTION) ||
+                            (commit_kind == EXCEPTION_RETURN) ||
                             ((commit_kind == COMMIT) && jump_valid_in) ||
                             ((commit_kind == WAIT_CSRW) && csr_write_exception_valid);
-    assign pipeline_pc = jump_pc_in;
+    assign pipeline_pc = (exception_valid_out) ? {exception_mtvec_base_in, 2'b0} :
+                         (commit_kind == EXCEPTION_RETURN) ? exception_mepc_in :
+                         jump_pc_in;
 
     wire [31:0]rd_decode;
     decoder #(5) rd_decoder(
