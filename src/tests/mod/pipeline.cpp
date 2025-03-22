@@ -53,6 +53,7 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
             handle_data_bus();
             handle_csr_bus();
             handle_csr_update();
+            handle_interrupt();
 
             clk();
             m_cycle_count++;
@@ -240,6 +241,27 @@ class PipelineTest : public ClockedModTest<Vpipeline> {
 
         mod->exception_mtvec_base_in = m_csr_rw_mem[MTVEC] >> 2;
         mod->exception_mepc_in = m_csr_rw_mem[MEPC];
+    }
+
+    std::optional<uint32_t>m_trigger_interrupt;
+    void handle_interrupt() {
+        if (mod->interrupt_valid_out) {
+            m_trigger_interrupt = std::nullopt;
+        }
+
+        if ((m_csr_rw_mem[MSCRATCH] & 0xFFAA0000) == 0xFFAA0000) {
+            // Pseudo CPU interrupt
+            m_trigger_interrupt = std::optional(m_csr_rw_mem[MSCRATCH] & 0xFFFF);
+            m_csr_rw_mem[MSCRATCH] = 0;
+        }
+
+        if (m_trigger_interrupt) {
+            mod->interrupt_valid = 1;
+            mod->interrupt_num = *m_trigger_interrupt;
+        } else {
+            mod->interrupt_valid = 0;
+        }
+
     }
 
     std::optional<uint32_t> read_csr(const uint32_t addr) {
@@ -536,6 +558,37 @@ TEST_F(PipelineTest, ExceptionReturn) {
         csrrw x3, mepc, x0\n\
         addi x3, x3, 4\n\
         csrrw x0, mepc, x3\n\
+        mret \n\
+        ");
+
+    simulate(100);
+
+}
+
+TEST_F(PipelineTest, InterruptReturn) {
+    reset();
+
+    // Writing to mscratch triggers an interrupt
+    memory_map_from_asm(" \
+        _start: \n\
+        lui x3, 0xFFAA0 \n\
+        addi x3, x3, 17 \n\
+        csrrw x0, mscratch, x3 \n\
+        lui x2, 0x80000 \n\
+        addi x2, x2, 17 \n\
+        beq x1, x2, done \n\
+\
+        loop: \n\
+        jal x0, loop \n\
+\
+        done: \n\
+        lui x4, 0xABCDE \n\
+        lui x5, 0x11223 \n\
+        sw x5,0(x4) \n\
+\
+        .org 0x400 \n\
+        exp: \n\
+        csrrw x1, mcause, x0 \n\
         mret \n\
         ");
 

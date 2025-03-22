@@ -23,6 +23,10 @@ module commit(
     // Exception Return
     input execute_exception_return_valid,
 
+    // Interrupt In
+    input interrupt_valid,
+    input [30:0]interrupt_num,
+
     input [31:0]execute_store_addr,
     input [31:0]execute_store_val,
     input [1:0]execute_store_size,
@@ -69,9 +73,10 @@ module commit(
     output exception_valid_out,
     output [31:0]exception_mepc_out,
     output [31:0]exception_mcause_out,
-    output [31:0]exception_mtval_out
+    output [31:0]exception_mtval_out,
 
-    // TODO: Interrupts
+    // Trigger interrupt stack in mstatus
+    output interrupt_valid_out
     );
 
     reg [4:0]rd_in;
@@ -92,6 +97,8 @@ module commit(
     reg csr_write_valid_in;
 
     reg in_valid;
+    reg take_interrupt;
+
 
     wire in_valid_mux = execute_valid ? 'd1 :
                         commit_valid ? 'd0 :
@@ -117,8 +124,34 @@ module commit(
             csr_write_valid_in <= 'd0;
 
             in_valid <= 'd0;
+            take_interrupt <= 'd0;
+        end else if (interrupt_valid &&
+                     (commit_kind == NODATA ||
+                     commit_valid)) begin
+            // Take an interrupt
+            take_interrupt <= 'd1;
+
+            rd_in <= 'd0;
+            rd_val_in <= 'd0;
+            inst_pc_in <= 'd0;
+            jump_pc_in <= 'd0;
+            jump_valid_in <= 'd0;
+            exception_num_in <= 'd0;
+            exception_val_in <= 'd0;
+            exception_valid_in <= 'd0;
+            exception_return_valid_in <= 'd0;
+            store_addr_in <= 'd0;
+            store_val_in <= 'd0;
+            store_size_in <= 'd0;
+            store_valid_in <= 'd0;
+            csr_write_addr_in <= 'd0;
+            csr_write_val_in <= 'd0;
+            csr_write_valid_in <= 'd0;
+            in_valid <= 'd0;
+
         end else begin
             in_valid <= in_valid_mux;
+            take_interrupt <= 'd0;
             if (execute_valid == 'd1) begin
                 rd_in <= execute_rd;
                 rd_val_in <= execute_rd_val;
@@ -179,11 +212,13 @@ module commit(
         COMMIT,
         EXCEPTION_RETURN,
         EXCEPTION,
+        INTERRUPT,
         WAIT_FIFO,
         WAIT_CSRW
     } commit_kind;
 
-    assign commit_kind = (!in_valid) ? NODATA :
+    assign commit_kind = take_interrupt ? INTERRUPT :
+                         (!in_valid) ? NODATA :
                          (exception_valid_in) ? EXCEPTION :
                          (exception_return_valid_in) ? EXCEPTION_RETURN :
                          (store_valid_in && datafifo_full) ? WAIT_FIFO :
@@ -202,19 +237,23 @@ module commit(
     assign datafifo_size_out = store_size_in;
     assign datafifo_valid_out = (commit_kind == COMMIT) && store_valid_in;
 
-    assign exception_mcause_out = (commit_kind == EXCEPTION) ? {26'b0, exception_num_in} :
+    assign exception_mcause_out = (commit_kind == INTERRUPT) ? {1'b1, interrupt_num} :
+                                  (commit_kind == EXCEPTION) ? {26'b0, exception_num_in} :
                                   (commit_kind == WAIT_CSRW) ? {26'b0, csr_write_exception_num} : 'd0;
     assign exception_mtval_out = (commit_kind == EXCEPTION) ? exception_val_in :
                                  (commit_kind == WAIT_CSRW) ? csr_write_exception_val : 'd0;
-    assign exception_mepc_out = inst_pc_in;
-    assign exception_valid_out = (commit_kind == EXCEPTION) ? 'd1 :
+    assign exception_mepc_out = (commit_kind == INTERRUPT) ? interrupt_pc :
+                                inst_pc_in;
+    assign exception_valid_out = ((commit_kind == EXCEPTION) || (commit_kind == INTERRUPT)) ? 'd1 :
                                  (commit_kind == WAIT_CSRW) ? csr_write_exception_valid : 'd0;
 
-    assign commit_valid = (commit_kind == EXCEPTION) ||
+    assign commit_valid = (commit_kind == INTERRUPT) ||
+                          (commit_kind == EXCEPTION) ||
                           (commit_kind == COMMIT) ||
                           (commit_kind == EXCEPTION_RETURN) ||
                           ((commit_kind == WAIT_CSRW) && csr_write_complete);
     assign pipeline_flush = (commit_kind == EXCEPTION) ||
+                            (commit_kind == INTERRUPT) ||
                             (commit_kind == EXCEPTION_RETURN) ||
                             ((commit_kind == COMMIT) && jump_valid_in) ||
                             ((commit_kind == WAIT_CSRW) && csr_write_exception_valid);
@@ -297,5 +336,22 @@ module commit(
         end
     end
 
+    // Interrupt logic
+    reg [31:0]interrupt_pc;
+    wire [31:0]interrupt_pc_mux;
+
+    // What PC would an interrupt return to?
+    assign interrupt_pc_mux = (commit_kind == NODATA) ? interrupt_pc :
+                               pipeline_flush ? pipeline_pc :
+                               (inst_pc_in + 'd4);
+
+    assign interrupt_valid_out = take_interrupt;
+
+    always_ff @(posedge clk) begin
+        if (reset == 'd1)
+            interrupt_pc <= 'd0;
+        else
+            interrupt_pc <= interrupt_pc_mux;
+    end
 
 endmodule

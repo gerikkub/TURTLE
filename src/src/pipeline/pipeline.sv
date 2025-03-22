@@ -51,6 +51,10 @@ module pipeline(
     input csrbus_bvalid,
     output csrbus_bready,
 
+    // Interrupt Input
+    input interrupt_valid,
+    input [30:0]interrupt_num,
+
     // Exception Handling
     input [29:0]exception_mtvec_base_in,
     input [31:0]exception_mepc_in,
@@ -58,7 +62,9 @@ module pipeline(
     output exception_valid_out,
     output [31:0]exception_mepc_out,
     output [31:0]exception_mcause_out,
-    output [31:0]exception_mtval_out
+    output [31:0]exception_mtval_out,
+
+    output interrupt_valid_out
     );
 
 
@@ -295,6 +301,8 @@ module pipeline(
         .execute_exception_val(execute_exception_val),
         .execute_exception_valid(execute_exception_valid),
         .execute_exception_return_valid(execute_exception_return_valid),
+        .interrupt_valid(interrupt_valid),
+        .interrupt_num(interrupt_num),
         .execute_store_addr(execute_store_addr),
         .execute_store_val(execute_store_val),
         .execute_store_size(execute_store_size),
@@ -327,7 +335,8 @@ module pipeline(
         .exception_valid_out(exception_valid_out),
         .exception_mepc_out(exception_mepc_out),
         .exception_mcause_out(exception_mcause_out),
-        .exception_mtval_out(exception_mtval_out));
+        .exception_mtval_out(exception_mtval_out),
+        .interrupt_valid_out(interrupt_valid_out));
 
 
 endmodule
