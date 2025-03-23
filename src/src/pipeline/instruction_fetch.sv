@@ -4,6 +4,7 @@
 module instruction_fetch(
     input clk,
     input reset,
+    input [31:0]reset_address,
 
     output [31:0] mem_fetch_addr,
     output mem_fetch_addr_en,
@@ -66,7 +67,7 @@ module instruction_fetch(
 
     always_ff @(posedge clk) begin
         if (reset == 'd1) begin
-            fetch_addr <= 'd0;
+            fetch_addr <= reset_address;
         end else begin
             fetch_addr <= fetch_addr_w;
         end

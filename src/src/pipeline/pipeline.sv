@@ -11,6 +11,7 @@
 module pipeline(
     input clk,
     input reset,
+    input [31:0]reset_address,
 
     // Instruction Bus
     output [31:0] mem_fetch_addr,
@@ -82,6 +83,7 @@ module pipeline(
     instruction_fetch fetch0(
         .clk(clk),
         .reset(reset),
+        .reset_address(reset_address),
         .mem_fetch_addr(mem_fetch_addr),
         .mem_fetch_addr_en(mem_fetch_addr_en),
         .mem_inst_in(mem_inst_in),

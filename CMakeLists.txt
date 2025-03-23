@@ -10,6 +10,8 @@ add_compile_options (-fdiagnostics-color=always)
 set(CMAKE_CXX_STANDARD 26)
 enable_testing()
 
+add_subdirectory(3rdparty)
 add_subdirectory(src)
+add_subdirectory(sim)
 
 add_subdirectory(tests)
